@@ -1,0 +1,9 @@
+-R theories Typer
+-arg "-w default,-notation-overridden"
+
+theories/Tactics.v
+theories/Ast.v
+theories/Subst.v
+theories/Typing.v
+# theories/SigmaAssoc.v
+theories/TypingLemma.v
