@@ -27,34 +27,34 @@ Proof.
       simpl in IHuA2.
       rewrite Nat.add_1_r.
       assumption.
-    + admit.
-      (* assert (nΓ : Γ ⊢ ^n : lift0 (S n) (safe_nth n Γ isdef)) by apply tyRel.
-      replace (lift (length Δ) (length Γ) ^n) with ^n.
+    + replace (lift (length Δ) (length Γ) ^n) with ^n.
       2: { unfold lift, update_rel, skip. comp_cases. }
-      replace (lift (length Δ) (length Γ) (lift0 (S n) (safe_nth n Γ isdef))) with (lift0 (S n) (safe_nth n Γ isdef)).
-      2: {
-        
-        
+      assert (isdef' : n < length (Δ ;; liftc (length Δ) 0 Γ)).
+      { rewrite app_length, liftc_length. lia. }
+      replace (lift (length Δ) (length Γ) (lift0 (S n) (safe_nth n Γ isdef))) with (lift0 (S n) (safe_nth n (Δ;;liftc (length Δ) 0 Γ) isdef')).
+      { apply tyRel. }
+      assert (isdef'' : n < length (liftc (length Δ) 0 Γ)).
+      { rewrite liftc_length. assumption. }
+      replace (safe_nth n (Δ ;; liftc (length Δ) 0 Γ) isdef') with (safe_nth n (liftc (length Δ) 0 Γ) isdef'').
+      2: { revert n isdef isdef' isdef''; induction Γ; intros n isdef isdef' isdef''; simpl in *. { lia. }
+           destruct n; simpl in *. { reflexivity. }
+           apply IHΓ. lia. }
+      revert n isdef isdef' isdef''; destruct Γ; intros n isdef isdef' isdef''; simpl in *. { lia. }
+      destruct n; simpl in *.
+      { unfold lift0, lift. rewrite update_rel_comp, update_rel_comp. f_equal.
+        apply functional_extensionality. intro i.
+        unfold skip, jump; comp_cases.
       }
-
-
-      revert n isdef. induction Γ; intros n isdef; simpl in *. { lia. }
-      destruct n.
-      * replace (safe_nth 0 (Γ ,, a) isdef) with a by reflexivity.
-        replace (lift (length Δ) (S (length Γ)) (lift0 1 a)) with (lift 1 0 (lift (length Δ) (length Γ) a)).
-        unfold lift. simpl. subst_helper. unfold skip. comp_cases.
-        replace (lift 1 0) with (lift0 1) by apply lift0_lift.
-        getRel (Δ ;; liftc (length Δ) 0 Γ ,, lift (length Δ) (length Γ) a) 0.
-
-        unfold lift, lift0. rewrite update_rel_comp, update_rel_comp.
-        f_equal. apply functional_extensionality. intro i.
-        unfold skip, jump. comp_cases.
-      * assert (isdef' : n < length Γ) by lia.
-        specialize (IHΓ n isdef').
-        replace (safe_nth (S n) (Γ ,, a) isdef) with (safe_nth n Γ isdef').
-        2: { simpl. apply safe_nth_proof_irrelevant. }
-        
-        unfold lift, lift0, update_rel, skip, jump in IHΓ; destruct (n <? length Γ). *)
+      replace (safe_nth n (liftc (length Δ) 0 Γ) _) with (lift (length Δ) (length Γ - n - 1) (safe_nth n Γ (gt_le_S n (length Γ) (gt_S_le (S n) (length Γ) isdef)))).
+      { unfold lift0, lift. rewrite update_rel_comp, update_rel_comp. f_equal.
+        apply functional_extensionality. intro i.
+        unfold jump, skip. comp_cases.
+      }
+      revert n isdef isdef' isdef''; induction Γ; intros n isdef isdef' isdef''; simpl in *. { lia. }
+      destruct n; simpl in *.
+      { replace (length Γ - 0) with (length Γ) by lia. reflexivity. }
+      apply IHΓ.
+      rewrite app_length, liftc_length. lia.
     + eapply (tyLam _ s1 s2); subst_helper;
       unfold liftc in *; fold liftc in *; simpl in *; try rewrite Nat.add_1_r; assumption.
     + unfold lift, update_rel; subst_helper.
