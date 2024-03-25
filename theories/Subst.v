@@ -77,6 +77,12 @@ Proof.
   lia.
 Qed.
 
+Lemma jump_jump' (n m i : nat)
+: jump n (jump m i) = jump (n+m) i.
+Proof.
+  unfold jump. lia.
+Qed.
+
 Lemma unjump_jump (n : nat)
 : (fun i => unjump n (jump n i)) = id.
 Proof.
@@ -249,6 +255,10 @@ End Subst.
 Ltac subst_helper :=
 repeat match goal with
 | _ => progress fold update_rel
+| |- context [ jump ?n (jump ?m ?i) ] => rewrite (jump_jump' n m)
 | |- context [ skip (skip ?f ?n) ?m ] => rewrite (skip_skip f n m)
 | |- context [ update_rel (skip (jump ?n) ?k) ] => replace (update_rel (skip (jump n) k)) with (lift n k) by reflexivity
+| H : context [ jump ?n (jump ?m ?i) ] |- _ => rewrite (jump_jump' n m) in H
+| H : context [ skip (skip ?f ?n) ?m ] |- _ => rewrite (skip_skip f n m) in H
+| H : context [ update_rel (skip (jump ?n) ?k) ] |- _ => replace (update_rel (skip (jump n) k)) with (lift n k) in H by reflexivity
 end.
