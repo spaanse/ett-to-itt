@@ -262,3 +262,31 @@ repeat match goal with
 | H : context [ skip (skip ?f ?n) ?m ] |- _ => rewrite (skip_skip f n m) in H
 | H : context [ update_rel (skip (jump ?n) ?k) ] |- _ => replace (update_rel (skip (jump n) k)) with (lift n k) in H by reflexivity
 end.
+
+Inductive closed_above : nat -> term -> Prop :=
+| ca_rel k n : n < k -> closed_above k (tRel n)
+| ca_sort k s : closed_above k (tSort s)
+| ca_prod k A B : closed_above k A -> closed_above (S k) B -> closed_above k (tProd A B)
+| ca_lambda k t : closed_above (S k) t -> closed_above k (tLambda t)
+| ca_app k u v : closed_above k u -> closed_above k v-> closed_above k (tApp u v)
+| ca_sum k A B : closed_above k A -> closed_above (S k) B -> closed_above k (tSum A B)
+| ca_pair k u v : closed_above k u -> closed_above (S k) v -> closed_above k (tPair u v)
+| ca_pi1 k u : closed_above k u -> closed_above k (tPi1 u)
+| ca_pi2 k u : closed_above k u -> closed_above k (tPi2 u)
+.
+
+Lemma closed_above_lt (n k : nat) (t : term) (n_le_k : n <= k)
+: closed_above n t -> closed_above k t.
+Proof.
+  intro closed_t.
+  revert k n_le_k. induction closed_t; intros k' n_le_k; cbn.
+  - apply ca_rel. lia.
+  - apply ca_sort.
+  - apply ca_prod; eauto with arith.
+  - apply ca_lambda; eauto with arith.
+  - apply ca_app; eauto with arith.
+  - apply ca_sum; eauto with arith.
+  - apply ca_pair; eauto with arith.
+  - apply ca_pi1; eauto with arith.
+  - apply ca_pi2; eauto with arith.
+Qed.
