@@ -40,6 +40,14 @@ Proof.
     + simpl. apply IHn.
 Qed.
 
+Program Lemma safe_nth_concat {A} (n : nat) (l1 l2 : list A) (isdecl : n < length (l1++l2)) (isdecl' : n < length l1)
+: safe_nth n (l1 ++ l2) isdecl = safe_nth n l1 isdecl'.
+Proof.
+  revert n isdecl isdecl'. induction l1; intros n isdecl isdecl'; simpl in *. { lia. }
+  destruct n; simpl in *. { reflexivity. }
+  apply IHl1.
+Qed.
+
 Inductive typed: context -> term -> term -> Prop :=
 | tySort (Γ : context) (s : sort)
 : Γ ⊢ (tSort s) : (tSort (sSucc s))
