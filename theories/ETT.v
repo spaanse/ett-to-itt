@@ -6,7 +6,7 @@ Reserved Notation "Γ ;; Δ" (at level 20, Δ at next level, left associativity,
 Reserved Notation "Γ ⊢ t : T" (at level 50, t, T at next level, format "'[' Γ '//' '⊢'  t '//' ':'  T ']'").
 Reserved Notation "Γ ⊢ t ≡ u : T" (at level 50, t, u, T at next level, format "'[' Γ '//' '⊢'  t  '≡'  u '//' ':'  T ']'").
 
-Section Typing.
+Section ETT.
 Declare Scope x_scope.
 Definition context := list term.
 Notation "Γ ,, d" := (d :: Γ) : x_scope.
@@ -189,7 +189,7 @@ where " Γ '⊢' t ≡ u : T " := (eq_typed Γ t u T) : x_scope.
 
 
 Delimit Scope x_scope with x.
-End Typing.
+End ETT.
 
 Declare Scope x_scope.
 

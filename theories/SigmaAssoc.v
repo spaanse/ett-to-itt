@@ -1,5 +1,5 @@
 From Coq Require Import Lia.
-Require Import Ast Subst Typing.
+Require Import Ast Subst ETT.
 Open Scope t_scope.
 Open Scope x_scope.
 

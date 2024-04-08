@@ -1,5 +1,6 @@
 From Coq Require Import List Lia Nat Arith.Compare_dec Arith.Arith Logic.FunctionalExtensionality.
-Require Import Ast Subst Typing Tactics.
+From Coq Require Import Program.Equality.
+Require Import Ast Subst ETT Tactics.
 Open Scope t_scope.
 Open Scope x_scope.
 

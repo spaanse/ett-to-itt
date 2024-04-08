@@ -4,6 +4,6 @@
 theories/Tactics.v
 theories/Ast.v
 theories/Subst.v
-theories/Typing.v
+theories/ETT.v
 # theories/SigmaAssoc.v
-theories/TypingLemma.v
+theories/ETTTypingLemma.v
