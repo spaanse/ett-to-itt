@@ -3,9 +3,10 @@ Require Import Ast Subst.
 
 Reserved Notation "Γ ,, d" (at level 20, d at next level, left associativity, format "'[' Γ ',,' d ']'").
 Reserved Notation "Γ ;; Δ" (at level 20, Δ at next level, left associativity, format "'[' Γ ';;' Δ ']'").
-Reserved Notation "Γ ⊢ t : T" (at level 50, t, T at next level, format "'[' Γ '//' '⊢'  t '//' ':'  T ']'").
-Reserved Notation "Γ ⊢ t ≡ u : T" (at level 50, t, u, T at next level, format "'[' Γ '//' '⊢'  t  '≡'  u '//' ':'  T ']'").
+Reserved Notation "Γ ⊢ₓ t : T" (at level 50, t, T at next level, format "'[' Γ '//' '⊢ₓ'  t '//' ':'  T ']'").
+Reserved Notation "Γ ⊢ₓ t ≡ u : T" (at level 50, t, u, T at next level, format "'[' Γ '//' '⊢ₓ'  t  '≡'  u '//' ':'  T ']'").
 
+Open Scope t_scope.
 Section ETT.
 Declare Scope x_scope.
 Definition context := list term.
@@ -50,153 +51,152 @@ Qed.
 
 Inductive typed: context -> term -> term -> Prop :=
 | tySort (Γ : context) (s : sort)
-: Γ ⊢ (tSort s) : (tSort (sSucc s))
+: Γ ⊢ₓ *s : *(sSucc s)
 
 | tyProd (Γ : context) (s1 : sort) (s2 : sort) (A B : term)
-: Γ ⊢ A : (tSort s1) ->
-  Γ ,, A ⊢ B : (tSort s2) ->
-  Γ ⊢ (tProd A B) : (tSort (sPi s1 s2))
+: Γ ⊢ₓ A : *s1 ->
+  Γ ,, A ⊢ₓ B : *s2 ->
+  Γ ⊢ₓ ∏A, B : *(sPi s1 s2)
 
 | tySum (Γ : context) (s1 : sort) (s2 : sort) (A B : term)
-: Γ ⊢ A : (tSort s1) ->
-  Γ ,, A ⊢ B : (tSort s2) ->
-  Γ ⊢ (tSum A B) : (tSort (sSig s1 s2))
+: Γ ⊢ₓ A : *s1 ->
+  Γ ,, A ⊢ₓ B : *s2 ->
+  Γ ⊢ₓ ∑A, B : *(sSig s1 s2)
 
 | tyRel (Γ : context) (n : nat) (isdef : n < List.length Γ)
-: Γ ⊢ (tRel n) : lift0 (S n) (safe_nth n Γ isdef)
+: Γ ⊢ₓ ^n : lift (S n) 0 (safe_nth n Γ isdef)
 
 | tyLam (Γ : context) (s1 s2 : sort) (A B t : term)
-: Γ ⊢ A : (tSort s1) ->
-  Γ ,, A ⊢ B : (tSort s2) ->
-  Γ ,, A ⊢ t : B ->
-  Γ ⊢ (tLambda t) : (tProd A B)
+: Γ ⊢ₓ A : *s1 ->
+  Γ ,, A ⊢ₓ B : *s2 ->
+  Γ ,, A ⊢ₓ t : B ->
+  Γ ⊢ₓ λ, t : ∏A, B
 
 | tyApp {Γ : context} {s1 s2 : sort} (A B t u : term)
-: Γ ⊢ A : (tSort s1) ->
-  Γ ,, A ⊢ B : (tSort s2) ->
-  Γ ⊢ t : (tProd A B) ->
-  Γ ⊢ u : A ->
-  Γ ⊢ (tApp t u) : (subst0 u B)
+: Γ ⊢ₓ A : *s1 ->
+  Γ ,, A ⊢ₓ B : *s2 ->
+  Γ ⊢ₓ t : ∏A, B ->
+  Γ ⊢ₓ u : A ->
+  Γ ⊢ₓ t @ u : (subst u 0 B)
 
 | tyPair (Γ : context) (s1 s2 : sort) (A B u v : term)
-: Γ ⊢ u : A ->
-  Γ ⊢ A : (tSort s1) ->
-  Γ ,, A ⊢ B : (tSort s2) ->
-  Γ ⊢ v : (subst0 u B) ->
-  Γ ⊢ (tPair u v) : (tSum A B)
+: Γ ⊢ₓ u : A ->
+  Γ ⊢ₓ A : *s1 ->
+  Γ ,, A ⊢ₓ B : *s2 ->
+  Γ ⊢ₓ v : (subst u 0 B) ->
+  Γ ⊢ₓ ⟨u, v⟩ : ∑A, B
 
 | tyPi1 (Γ : context) (A B p : term)
-: Γ ⊢ p : (tSum A B) ->
-  Γ ⊢ (tPi1 p) : A
+: Γ ⊢ₓ p : ∑A, B ->
+  Γ ⊢ₓ π₁ p : A
 
 | tyPi2 (Γ : context) (A B p : term)
-: Γ ⊢ p : (tSum A B) ->
-  Γ ⊢ (tPi2 p) : (subst0 (tPi1 p) B)
+: Γ ⊢ₓ p : ∑A, B ->
+  Γ ⊢ₓ π₂ p : (subst (π₁ p) 0 B)
 
 | tyConv (Γ : context) (s : sort) (A B u : term)
-: Γ ⊢ u : A ->
-  Γ ⊢ A ≡ B : (tSort s) ->
-  Γ ⊢ u : B
-where "Γ '⊢' t : T" := (typed Γ t T) : x_scope
+: Γ ⊢ₓ u : A ->
+  Γ ⊢ₓ A ≡ B : *s ->
+  Γ ⊢ₓ u : B
+where "Γ '⊢ₓ' t : T" := (typed Γ t T) : x_scope
 
 with eq_typed : context -> term -> term -> term -> Prop :=
 | eqRefl (Γ : context) (u A : term)
-: Γ ⊢ u : A ->
-  Γ ⊢ u ≡ u : A
+: Γ ⊢ₓ u : A ->
+  Γ ⊢ₓ u ≡ u : A
 
 | eqSym (Γ : context) (u v A : term)
-: Γ ⊢ u : A ->
-  Γ ⊢ v : A ->
-  Γ ⊢ u ≡ v : A ->
-  Γ ⊢ v ≡ u : A
+: Γ ⊢ₓ u : A ->
+  Γ ⊢ₓ v : A ->
+  Γ ⊢ₓ u ≡ v : A ->
+  Γ ⊢ₓ v ≡ u : A
 
 | eqTrans (Γ : context) (u v w A : term)
-: Γ ⊢ u ≡ v : A ->
-  Γ ⊢ v ≡ w : A ->
-  Γ ⊢ u ≡ w : A
+: Γ ⊢ₓ u ≡ v : A ->
+  Γ ⊢ₓ v ≡ w : A ->
+  Γ ⊢ₓ u ≡ w : A
 
 | eqConv (Γ : context) (s : sort) (t1 t2 T1 T2 : term)
-: Γ ⊢ t1 ≡ t2 : T1 ->
-  Γ ⊢ T1 ≡ T2 : tSort s ->
-  Γ ⊢ t1 ≡ t2 : T2
+: Γ ⊢ₓ t1 ≡ t2 : T1 ->
+  Γ ⊢ₓ T1 ≡ T2 : *s ->
+  Γ ⊢ₓ t1 ≡ t2 : T2
 
 | eqAppComp (Γ : context) (s1 s2 : sort) (u t A B : term)
-: Γ ⊢ A : (tSort s1) ->
-  Γ ,, A ⊢ B : (tSort s2) ->
-  Γ ,, A ⊢ t : B ->
-  Γ ⊢ u : A ->
-  Γ ⊢ (tApp (tLambda t) u) ≡ (subst0 u t) : (subst0 u B) 
+: Γ ⊢ₓ A : *s1 ->
+  Γ ,, A ⊢ₓ B : *s2 ->
+  Γ ,, A ⊢ₓ t : B ->
+  Γ ⊢ₓ u : A ->
+  Γ ⊢ₓ (λ, t) @ u ≡ (subst u 0 t) : (subst u 0 B) 
 
 | eqPi1Comp (Γ : context) (s1 s2 : sort) (u v A B : term)
-: Γ ⊢ A : (tSort s1) ->
-  Γ ⊢ u : A ->
-  Γ ,, A ⊢ B : (tSort s2) ->
-  Γ ⊢ v : (subst0 u B) ->
-  Γ ⊢ (tPi1 (tPair u v)) ≡ u : A
+: Γ ⊢ₓ A : *s1 ->
+  Γ ⊢ₓ u : A ->
+  Γ ,, A ⊢ₓ B : *s2 ->
+  Γ ⊢ₓ v : (subst u 0 B) ->
+  Γ ⊢ₓ π₁ ⟨u, v⟩ ≡ u : A
 
 | eqPi2Comp (Γ : context) (s1 s2 : sort) (u v A B : term)
-: Γ ⊢ A : (tSort s1) ->
-  Γ ⊢ u : A ->
-  Γ ,, A ⊢ B : (tSort s2) ->
-  Γ ⊢ v : (subst0 u B) ->
-  Γ ⊢ (tPi2 (tPair u v)) ≡ v : (subst0 u B)
+: Γ ⊢ₓ A : *s1 ->
+  Γ ⊢ₓ u : A ->
+  Γ ,, A ⊢ₓ B : *s2 ->
+  Γ ⊢ₓ v : (subst u 0 B) ->
+  Γ ⊢ₓ π₂ ⟨u, v⟩ ≡ v : (subst u 0 B)
 
 | eqLambdaEta (Γ : context) (s1 s2 : sort) (f A B : term)
-: Γ ⊢ A : (tSort s1) ->
-  Γ ,, A ⊢ B : (tSort s2) ->
-  Γ ⊢ f : tProd A B ->
-  Γ ⊢ (tLambda (tApp f (tRel 0))) ≡ f : (tProd A B)
+: Γ ⊢ₓ A : *s1 ->
+  Γ ,, A ⊢ₓ B : *s2 ->
+  Γ ⊢ₓ f : ∏A, B ->
+  Γ ⊢ₓ λ, f @ ^0 ≡ f : (tProd A B)
 
 | eqPairEta (Γ : context) (s1 s2 : sort)  (A B p : term)
-: Γ ⊢ A : (tSort s1) ->
-  Γ ,, A ⊢ B : (tSort s2) ->
-  Γ ⊢ p : tSum A B ->
-  Γ ⊢ (tPair (tPi1 p) (tPi2 p)) ≡ p : (tSum A B)
+: Γ ⊢ₓ A : *s1 ->
+  Γ ,, A ⊢ₓ B : *s2 ->
+  Γ ⊢ₓ p : tSum A B ->
+  Γ ⊢ₓ ⟨π₁ p, π₂ p⟩ ≡ p : (tSum A B)
 
 | eqProdCong (Γ : context) (s1 s2 : sort) (A1 A2 B1 B2 : term)
-: Γ ⊢ A1 ≡ A2 : tSort s1 ->
-  Γ ,, A1 ⊢ B1 ≡ B2 : tSort s2 ->
-  Γ ⊢ (tProd A1 B1) ≡ (tProd A2 B2) : tSort (sPi s1 s2)
+: Γ ⊢ₓ A1 ≡ A2 : *s1 ->
+  Γ ,, A1 ⊢ₓ B1 ≡ B2 : *s2 ->
+  Γ ⊢ₓ ∏A1, B1 ≡ ∏A2, B2 : *(sPi s1 s2)
 
 | eqLamCong (Γ : context) (A B t1 t2 : term)
-: Γ ,, A ⊢ t1 ≡ t2 : B ->
-  Γ ⊢ (tLambda t1) ≡ (tLambda t2) : (tProd A B)
+: Γ ,, A ⊢ₓ t1 ≡ t2 : B ->
+  Γ ⊢ₓ λ, t1 ≡ λ, t2 : ∏A, B
 
 | eqAppCong (Γ : context) (A B t1 t2 u1 u2 : term)
-: Γ ⊢ u1 ≡ u2 : A ->
-  Γ ⊢ t1 ≡ t2 : (tProd A B) ->
-  Γ ⊢ (tApp t1 u1) ≡ (tApp t2 u2) : (subst0 u1 B)
+: Γ ⊢ₓ u1 ≡ u2 : A ->
+  Γ ⊢ₓ t1 ≡ t2 : ∏A, B ->
+  Γ ⊢ₓ t1 @ u1 ≡ t2 @ u2 : (subst u1 0 B)
 
 | eqSumCong (Γ : context) (s1 s2 : sort) (A1 A2 B1 B2 : term)
-: Γ ⊢ A1 ≡ A2 : tSort s1 ->
-  Γ ,, A1 ⊢ B1 ≡ B2 : tSort s2 ->
-  Γ ⊢ (tSum A1 B1) ≡ (tSum A2 B2) : tSort (sSig s1 s2)
+: Γ ⊢ₓ A1 ≡ A2 : *s1 ->
+  Γ ,, A1 ⊢ₓ B1 ≡ B2 : *s2 ->
+  Γ ⊢ₓ ∑A1, B1 ≡ ∑A2, B2 : *(sSig s1 s2)
 
 | eqPairCong (Γ : context) (A B u1 u2 v1 v2 : term)
-: Γ ⊢ u1 ≡ u2 : A -> 
-  Γ ,, A ⊢ v1 ≡ v2 : B ->
-  Γ ⊢ (tPair u1 v1) ≡ (tPair u2 v2) : (tSum A B)
+: Γ ⊢ₓ u1 ≡ u2 : A -> 
+  Γ ,, A ⊢ₓ v1 ≡ v2 : B ->
+  Γ ⊢ₓ ⟨u1, v1⟩ ≡ ⟨u2,v2⟩ : ∑A, B
 
 | eqPi1Cong (Γ : context) (A B p1 p2 : term)
-: Γ ⊢ p1 ≡ p2 : (tSum A B) ->
-  Γ ⊢ (tPi1 p1) ≡ (tPi1 p2) : A
+: Γ ⊢ₓ p1 ≡ p2 : ∑A, B ->
+  Γ ⊢ₓ π₁ p2 ≡ π₁ p2 : A
 
 | eqPi2Cong (Γ : context) (A B p1 p2 : term)
-: Γ ⊢ p1 ≡ p2 : (tSum A B) ->
-  Γ ⊢ (tPi2 p1) ≡ (tPi2 p2) : subst0 (tPi1 p1) B
+: Γ ⊢ₓ p1 ≡ p2 : ∑A, B ->
+  Γ ⊢ₓ π₂ p1 ≡ π₂ p2 : subst (tPi1 p1) 0 B
 
-where " Γ '⊢' t ≡ u : T " := (eq_typed Γ t u T) : x_scope.
+where " Γ '⊢ₓ' t ≡ u : T " := (eq_typed Γ t u T) : x_scope.
 
 
-Delimit Scope x_scope with x.
 End ETT.
 
 Declare Scope x_scope.
 
 Notation "Γ ,, d" := (d :: Γ) : x_scope.
 Notation "Γ ;; Δ" := (Δ ++ Γ) : x_scope.
-Notation "Γ ⊢ t : T" := (typed Γ t T) : x_scope.
-Notation "Γ ⊢ t ≡ u : T" := (eq_typed Γ t u T) : x_scope.
+Notation "Γ ⊢ₓ t : T" := (typed Γ t T) : x_scope.
+Notation "Γ ⊢ₓ t ≡ u : T" := (eq_typed Γ t u T) : x_scope.
 
 Ltac getRel Γ n :=
   let isdef := fresh "isdef" in
@@ -204,9 +204,6 @@ Ltac getRel Γ n :=
 
 Ltac typer :=
 repeat match goal with
-| |- _ => progress unfold subst0
-| |- _ => progress unfold unlift0
-| |- _ => progress unfold lift0
 | |- _ => progress simpl
 | |- typed _ (tSort _) _ => eapply tySort
 | |- typed _ (tProd _ _) _ => eapply tyProd

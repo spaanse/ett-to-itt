@@ -11,8 +11,66 @@ Proof.
   apply IHΔ.
 Qed.
 
-Lemma context_consistent (Γ Δ Ξ : context) (u A : term) (uA : Γ ;; Ξ ⊢ u : A)
-: Γ ;; Δ ;; (liftc (length Δ) 0 Ξ) ⊢ lift (length Δ) (length Ξ) u : lift (length Δ) (length Ξ) A.
+Lemma type_lift {Γ Δ Ξ t A} (h : Γ ;; Ξ ⊢ₓ t : A)
+: Γ ;; Δ ;; (liftc (length Δ) 0 Ξ) ⊢ₓ lift (length Δ) (length Ξ) t : lift (length Δ) (length Ξ) A
+with cong_lift {Γ Δ Ξ t1 t2 A} (h : Γ ;; Ξ ⊢ₓ t1 ≡ t2 : A)
+: Γ ;; Δ ;; (liftc (length Δ) 0 Ξ) ⊢ₓ lift (length Δ) (length Ξ) t1 ≡ lift (length Δ) (length Ξ) t1 : lift (length Δ) (length Ξ) A.
+Proof.
+  - dependent destruction h; cbn; subst_helper.
+    + apply tySort.
+    + apply tyProd.
+      * apply (type_lift Γ Δ Ξ A *s1). assumption.
+      * assert (H : Γ;;Δ;;liftc (length Δ) 0 (Ξ ,, A)
+            ⊢ₓ lift (length Δ) (length (Ξ ,, A)) B
+            : lift (length Δ) (length (Ξ ,, A)) *s2).
+        { apply type_lift. assumption. }
+        simpl in H.
+        rewrite Nat.add_1_r.
+        assumption.
+    + apply tySum.
+      * apply (type_lift Γ Δ Ξ A *s1). assumption.
+      * assert (H : Γ;;Δ;;liftc (length Δ) 0 (Ξ ,, A)
+            ⊢ₓ lift (length Δ) (length (Ξ ,, A)) B
+            : lift (length Δ) (length (Ξ ,, A)) *s2).
+        { apply type_lift. assumption. }
+        simpl in H.
+        rewrite Nat.add_1_r.
+        assumption.
+    + unfold jump, skip. comp_cases.
+      * rewrite (safe_nth_concat _ _ _ _ Heqb).
+        assert (isdef' : n < length (liftc (length Δ) 0 Ξ)).
+        { rewrite liftc_length. assumption. }
+        replace (lift (length Δ) (length Ξ) (lift0 (S n) (safe_nth n Ξ Heqb))) with (lift0 (S n) (safe_nth n (liftc (length Δ) 0 Ξ) isdef')).
+        admit.
+        admit.
+      * admit.
+    + apply tyLam with s1 s2.
+      * apply (type_lift Γ Δ Ξ A *s1). assumption.
+      * assert (H : Γ;;Δ;;liftc (length Δ) 0 (Ξ ,, A)
+            ⊢ₓ lift (length Δ) (length (Ξ ,, A)) B
+            : lift (length Δ) (length (Ξ ,, A)) *s2).
+        { apply type_lift. assumption. }
+        simpl in H.
+        rewrite Nat.add_1_r.
+        assumption.
+      * assert (H : Γ;;Δ;;liftc (length Δ) 0 (Ξ ,, A)
+            ⊢ₓ lift (length Δ) (length (Ξ ,, A)) t
+            : lift (length Δ) (length (Ξ ,, A)) B).
+        { apply type_lift. assumption. }
+        simpl in H.
+        rewrite Nat.add_1_r.
+        assumption.
+    + admit.
+    + admit.
+    + admit.
+    + admit.
+    + admit.
+  - admit.   
+Admitted.
+
+
+Lemma context_consistent (Γ Δ Ξ : context) (u A : term) (uA : Γ ;; Ξ ⊢ₓ u : A)
+: Γ ;; Δ ;; (liftc (length Δ) 0 Ξ) ⊢ₓ lift (length Δ) (length Ξ) u : lift (length Δ) (length Ξ) A.
 Proof.
   induction Γ; simpl in *.
   - repeat rewrite <- (app_nil_end _) in *.
@@ -58,36 +116,13 @@ Proof.
       rewrite app_length, liftc_length. lia.
     + eapply (tyLam _ s1 s2); subst_helper;
       unfold liftc in *; fold liftc in *; simpl in *; try rewrite Nat.add_1_r; assumption.
-    + unfold lift, update_rel; subst_helper.
-      eapply tyApp. subst_helper;
-      unfold liftc in *; fold liftc in *; simpl in *; try rewrite Nat.add_1_r; assumption.
-
-
-
-
-        
-        
-
-
-
-  induction uA.
-  - apply tySort.
-  - apply tyProd; fold lift. { apply IHuA1. }
-
-
-    
-
-    
-  revert u A Ξ uA. induction Δ; intros u A Ξ uA; simpl in *.
-  - rewrite liftc0k. rewrite lift0k. rewrite lift0k. assumption.
-  - revert u A uA. induction Ξ; intros u A uA.
-    + simpl in *.
-      
-Qed.
+    + unfold lift, update_rel in *; fold update_rel in *; subst_helper.
+      simpl in *. rewrite Nat.add_1_r in *.
+Admitted.
 
 Lemma context_swap (Γ : context) (u A B C : term)
-: Γ ,, A ⊢ u : C ->
-  Γ ,, B ,, lift 1 0 A ⊢ lift 1 1 u : lift 1 1 C.
+: Γ ,, A ⊢ₓ u : C ->
+  Γ ,, B ,, lift 1 0 A ⊢ₓ lift 1 1 u : lift 1 1 C.
 Proof.
   intro uC.
   induction u; inversion uC.
@@ -117,8 +152,8 @@ Proof.
 
 Qed.
 
-Lemma context_add_consistent' (Γ : context) (u A B : term) (uA : Γ ⊢ u : A)
-: Γ ,, B ⊢ (lift 1 0 u) : (lift 1 0 A).
+Lemma context_add_consistent' (Γ : context) (u A B : term) (uA : Γ ⊢ₓ u : A)
+: Γ ,, B ⊢ₓ (lift 1 0 u) : (lift 1 0 A).
 Proof.
   induction uA; simpl.
   - apply tySort.
@@ -127,8 +162,8 @@ Proof.
     + 
 Qed.
 
-Lemma context_add_consistent (Γ Ξ : context) (u A B : term) (uA : Γ ;; Ξ ⊢ u : A)
-: Γ ,, B ;; (liftc 1 0 Ξ) ⊢ lift 1 (length Ξ) u : lift 1 (length Ξ) A.
+Lemma context_add_consistent (Γ Ξ : context) (u A B : term) (uA : Γ ;; Ξ ⊢ₓ u : A)
+: Γ ,, B ;; (liftc 1 0 Ξ) ⊢ₓ lift 1 (length Ξ) u : lift 1 (length Ξ) A.
 Proof.
   induction Ξ; simpl in *.
   - induction uA; simpl.
@@ -139,8 +174,8 @@ Proof.
 Admitted.
 
 
-Lemma context_consistent (Γ Δ Ξ : context) (u A : term) (uA : Γ ;; Ξ ⊢ u : A)
-: Γ ;; Δ ;; (liftc (length Δ) 0 Ξ) ⊢ lift (length Δ) (length Ξ) u : lift (length Δ) (length Ξ) A.
+Lemma context_consistent (Γ Δ Ξ : context) (u A : term) (uA : Γ ;; Ξ ⊢ₓ u : A)
+: Γ ;; Δ ;; (liftc (length Δ) 0 Ξ) ⊢ₓ lift (length Δ) (length Ξ) u : lift (length Δ) (length Ξ) A.
 Proof.
   induction uA; simpl in *.
   - apply tySort.
@@ -160,9 +195,9 @@ Proof.
 Qed.
 
 Lemma subst_consistent (Γ Δ : context) (u t A B : term) 
-: Γ ⊢ u : A ->
-  Γ ,, A ;; Δ ⊢ t : B ->
-  Γ ;; Δ ⊢ subst u (length Δ) t : subst u (length Δ) B.
+: Γ ⊢ₓ u : A ->
+  Γ ,, A ;; Δ ⊢ₓ t : B ->
+  Γ ;; Δ ⊢ₓ subst u (length Δ) t : subst u (length Δ) B.
 Proof.
   intros uA tB.
   remember (Γ ,, A ;; Δ) as s. revert Heqs.
@@ -190,11 +225,11 @@ Proof.
 Qed.
 
 Lemma typing_consistent_l (Γ : context) (u v A : term)
-: Γ ⊢ u ≡ v : A ->
-  Γ ⊢ u : A
+: Γ ⊢ₓ u ≡ v : A ->
+  Γ ⊢ₓ u : A
 with typing_consistent_r (Γ : context) (u v A : term)
-: Γ ⊢ u ≡ v : A ->
-  Γ ⊢ v : A.
+: Γ ⊢ₓ u ≡ v : A ->
+  Γ ⊢ₓ v : A.
 Proof.
   intros eq.
   destruct eq.
@@ -214,25 +249,25 @@ Proof.
     + admit.
   - eapply tyLam; [exact H|exact H0|].
     eapply tyConv.
-    + eapply tyApp.
-    + inversion H.
-    + admit.
-    + 
+    + eapply tyApp; admit.
+    + inversion H; admit.
+  - admit.
+  - admit.
 
-Qed.
+Admitted.
 
 Fixpoint valid_context (Γ : context) : Prop :=
 match Γ with
 | nil => True
-| cons A Γ => (exists U, Γ ⊢ A : U) /\ valid_context Γ
+| cons A Γ => (exists U, Γ ⊢ₓ A : U) /\ valid_context Γ
 end.
 
 Lemma typing_validity (Γ : context) (u A : term)
-: Γ |- u : A ->
-  exists (U : term), Γ ⊢ A : U
+: Γ ⊢ₓ u : A ->
+  exists (U : term), Γ ⊢ₓ A : U
 with eq_validity (Γ : context) (u v A : term)
-: Γ |- u ≡ v : A ->
-  exists (U : term), Γ ⊢ A : U.
+: Γ ⊢ₓ u ≡ v : A ->
+  exists (U : term), Γ ⊢ₓ A : U.
 Proof.
   intros judgement.
   destruct judgement.
