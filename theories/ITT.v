@@ -56,6 +56,25 @@ Inductive typed: context -> term -> term -> Prop :=
 | tyPi2 (Γ : context) (A B p : term)
 : Γ ⊢ᵢ p : ∑A, B ->
   Γ ⊢ᵢ π₂ p : (subst (π₁ p) 0 B)
+
+| tyEq (Γ : context) (s : sort) (A u v : term)
+: Γ ⊢ᵢ A : *s ->
+  Γ ⊢ᵢ u : A ->
+  Γ ⊢ᵢ v : A ->
+  Γ ⊢ᵢ u == v : *(sEq s)
+
+| tyRefl (Γ : context) (s : sort) (A u : term)
+: Γ ⊢ᵢ u : A ->
+  Γ ⊢ᵢ A : *s ->
+  Γ ⊢ᵢ Refl(u) : u == u
+
+| tyJ (Γ : context) (s : sort) (A C t p x y : term)
+: Γ ,, A ,, A ,, (^1 == ^0) ⊢ᵢ C : *s ->
+  Γ ,, A ⊢ᵢ t : (subst Refl(^0) 0 (subst ^0 0 (subst ^0 0 C))) ->
+  Γ ⊢ᵢ x : A ->
+  Γ ⊢ᵢ y : A ->
+  Γ ⊢ᵢ p : x == y ->
+  Γ ⊢ᵢ J(t,p) : (subst p 0 (subst y 0 (subst x 0 C)))
   
 | tyConv (Γ : context) (A B t : term) (s : sort)
 : Γ ⊢ᵢ t : A ->

@@ -58,6 +58,26 @@ Inductive typed: context -> term -> term -> Prop :=
 : Γ ⊢ₓ p : ∑A, B ->
   Γ ⊢ₓ π₂ p : (subst (π₁ p) 0 B)
 
+| tyEq (Γ : context) (s : sort) (A u v : term)
+: Γ ⊢ₓ A : *s ->
+  Γ ⊢ₓ u : A ->
+  Γ ⊢ₓ v : A ->
+  Γ ⊢ₓ u == v : *(sEq s)
+
+| tyRefl (Γ : context) (s : sort) (A u : term)
+: Γ ⊢ₓ u : A ->
+  Γ ⊢ₓ A : *s ->
+  Γ ⊢ₓ Refl(u) : u == u
+
+| tyJ (Γ : context) (s : sort) (A C t p x y : term)
+: Γ ,, A ,, A ,, (^1 == ^0) ⊢ₓ C : *s ->
+  Γ ,, A ⊢ₓ t : (subst Refl(^0) 0 (subst ^0 0 (subst ^0 0 C))) ->
+  Γ ⊢ₓ x : A ->
+  Γ ⊢ₓ y : A ->
+  Γ ⊢ₓ p : x == y ->
+  Γ ⊢ₓ J(t,p) : (subst p 0 (subst y 0 (subst x 0 C)))
+  
+
 | tyConv (Γ : context) (s : sort) (A B u : term)
 : Γ ⊢ₓ u : A ->
   Γ ⊢ₓ A ≡ B : *s ->
@@ -85,6 +105,12 @@ with eq_typed : context -> term -> term -> term -> Prop :=
   Γ ⊢ₓ T1 ≡ T2 : *s ->
   Γ ⊢ₓ t1 ≡ t2 : T2
 
+| eqReflection (Γ : context) (u v p A : term)
+: Γ ⊢ₓ u : A ->
+  Γ ⊢ₓ v : A ->
+  Γ ⊢ₓ p : u == v ->
+  Γ ⊢ₓ u ≡ v : A
+
 | eqAppComp (Γ : context) (s1 s2 : sort) (u t A B : term)
 : Γ ⊢ₓ A : *s1 ->
   Γ ,, A ⊢ₓ B : *s2 ->
@@ -105,6 +131,12 @@ with eq_typed : context -> term -> term -> term -> Prop :=
   Γ ,, A ⊢ₓ B : *s2 ->
   Γ ⊢ₓ v : (subst u 0 B) ->
   Γ ⊢ₓ π₂ ⟨u, v⟩ ≡ v : (subst u 0 B)
+
+| eqJComp (Γ : context) (s : sort) (t x A C : term)
+: Γ ,, A ,, A ,, (^1 == ^0) ⊢ₓ C : *s ->
+  Γ ,, A ⊢ₓ t : (subst Refl(^0) 0 (subst ^0 0 (subst ^0 0 C))) ->
+  Γ ⊢ₓ x : A ->
+  Γ ⊢ₓ J(t, Refl(x)) ≡ (subst x 0 t) : (subst Refl(x) 0 (subst x 0 (subst x 0 C)))
 
 | eqLambdaEta (Γ : context) (s1 s2 : sort) (f A B : term)
 : Γ ⊢ₓ A : *s1 ->
@@ -149,6 +181,21 @@ with eq_typed : context -> term -> term -> term -> Prop :=
 | eqPi2Cong (Γ : context) (A B p1 p2 : term)
 : Γ ⊢ₓ p1 ≡ p2 : ∑A, B ->
   Γ ⊢ₓ π₂ p1 ≡ π₂ p2 : subst (tPi1 p1) 0 B
+
+| eqEqCong (Γ : context) (s : sort) (A u u' v v' : term)
+: Γ ⊢ₓ u ≡ u' : A ->
+  Γ ⊢ₓ v ≡ v' : A ->
+  Γ ⊢ₓ A : *s ->
+  Γ ⊢ₓ (u == v) ≡ (u' == v') : *(sEq s)
+
+| eqReflCong (Γ : context) (A u u' : term)
+: Γ ⊢ₓ u ≡ u' : A ->
+  Γ ⊢ₓ Refl(u) ≡ Refl(u') : u == u
+
+| eqJCong (Γ : context) (A C x y t t' p p' : term)
+: Γ ,, A ⊢ₓ t ≡ t' : C[^0, ^0, Refl(^0)] ->
+  Γ ⊢ₓ p ≡ p' : x == y ->
+  Γ ⊢ₓ J(t,p) ≡ J(t',p') : C[x, y, p]
 
 where " Γ '⊢ₓ' t ≡ u : T " := (eq_typed Γ t u T) : x_scope.
 

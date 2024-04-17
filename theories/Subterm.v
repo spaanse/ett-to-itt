@@ -13,9 +13,14 @@ Inductive subterm : term -> term -> Prop :=
 | sub_pair_r u v v' : subterm_eq v v' -> subterm v ⟨u, v'⟩
 | sub_pi1 p p' : subterm_eq p p' -> subterm p (π₁ p')
 | sub_pi2 p p' : subterm_eq p p' -> subterm p (π₂ p')
+| sub_eq_l u u' v : subterm_eq u u' -> subterm u (u' == v)
+| sub_eq_r u v v' : subterm_eq v v' -> subterm v (u == v')
+| sub_refl u u' : subterm_eq u u' -> subterm u (Refl(u'))
+| sub_J_l t t' p : subterm_eq t t' -> subterm t (J(t', p))
+| sub_J_r t p p' : subterm_eq p p' -> subterm p (J(t, p'))
 with subterm_eq : term -> term -> Prop :=
-| sub_refl t : subterm_eq t t
-| sub_sub u v : subterm u v -> subterm_eq u v
+| subeq_refl t : subterm_eq t t
+| subeq_sub u v : subterm u v -> subterm_eq u v
 .
 
 Lemma subterm_trans {u v w : term}
@@ -25,17 +30,22 @@ with subterm_trans' {u v w : term}
 Proof.
   - intros uv vw.
     destruct vw.
-    + eapply sub_prod_l, sub_sub, subterm_trans'; eassumption.
-    + eapply sub_prod_r, sub_sub, subterm_trans'; eassumption.
-    + eapply sub_lambda, sub_sub, subterm_trans'; eassumption.
-    + eapply sub_app_l, sub_sub, subterm_trans'; eassumption.
-    + eapply sub_app_r, sub_sub, subterm_trans'; eassumption.
-    + eapply sub_sum_l, sub_sub, subterm_trans'; eassumption.
-    + eapply sub_sum_r, sub_sub, subterm_trans'; eassumption.
-    + eapply sub_pair_l, sub_sub, subterm_trans'; eassumption.
-    + eapply sub_pair_r, sub_sub, subterm_trans'; eassumption.
-    + eapply sub_pi1, sub_sub, subterm_trans'; eassumption.
-    + eapply sub_pi2, sub_sub, subterm_trans'; eassumption.
+    + eapply sub_prod_l, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_prod_r, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_lambda, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_app_l, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_app_r, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_sum_l, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_sum_r, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_pair_l, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_pair_r, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_pi1, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_pi2, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_eq_l, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_eq_r, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_refl, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_J_l, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_J_r, subeq_sub, subterm_trans'; eassumption.
   - intros uv vw.
     destruct vw.
     + assumption.
@@ -48,44 +58,17 @@ Lemma term_strong_ind (P : term -> Prop) :
 Proof.
   intros H t.
   enough (H0 : forall u, subterm_eq u t -> P u).
-  { apply H0, sub_refl. }
+  { apply H0, subeq_refl. }
   induction t; intros u ut.
-  - inversion ut; subst.
-    + apply H. intros v vt. inversion vt.
-    + inversion H0.
-  - inversion ut; subst.
-    + apply H. intros v vt. inversion vt.
-    + inversion H0.
-  - apply H. intros v vu. inversion ut; subst.
-    + inversion vu; subst; eauto.
-    + inversion H0; subst; [apply IHt1|apply IHt2].
-      * eapply sub_sub, subterm_trans'; eassumption.
-      * eapply sub_sub, subterm_trans'; eassumption.
-  - apply H. intros v vu. inversion ut; subst.
-    + inversion vu; subst; eauto.
-    + inversion H0; subst; apply IHt.
-      eapply sub_sub, subterm_trans'; eassumption.
-  - apply H. intros v vu. inversion ut; subst.
-    + inversion vu; subst; eauto.
-    + inversion H0; subst; [apply IHt1|apply IHt2].
-      * eapply sub_sub, subterm_trans'; eassumption.
-      * eapply sub_sub, subterm_trans'; eassumption.
-  - apply H. intros v vu. inversion ut; subst.
-    + inversion vu; subst; eauto.
-    + inversion H0; subst; [apply IHt1|apply IHt2].
-      * eapply sub_sub, subterm_trans'; eassumption.
-      * eapply sub_sub, subterm_trans'; eassumption.
-  - apply H. intros v vu. inversion ut; subst.
-    + inversion vu; subst; eauto.
-    + inversion H0; subst; [apply IHt1|apply IHt2].
-      * eapply sub_sub, subterm_trans'; eassumption.
-      * eapply sub_sub, subterm_trans'; eassumption.
-  - apply H. intros v vu. inversion ut; subst.
-    + inversion vu; subst; eauto.
-    + inversion H0; subst; apply IHt.
-      eapply sub_sub, subterm_trans'; eassumption.
-  - apply H. intros v vu. inversion ut; subst.
-    + inversion vu; subst; eauto.
-    + inversion H0; subst; apply IHt.
-      eapply sub_sub, subterm_trans'; eassumption.
+  { inversion ut; subst.
+    - apply H. intros v vt. inversion vt.
+    - inversion H0.
+  }{inversion ut; subst.
+    - apply H. intros v vt. inversion vt.
+    - inversion H0.
+  }
+  all: apply H; intros v vu.
+  all: inversion ut; subst; [inversion vu | inversion H0].
+  all: subst; eauto.
+  all: eauto using subeq_sub, subterm_trans'.
 Qed.

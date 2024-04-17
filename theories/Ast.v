@@ -4,6 +4,7 @@ Inductive sort : Type :=
 | sSucc : sort -> sort
 | sPi : sort -> sort -> sort
 | sSig : sort -> sort -> sort
+| sEq : sort -> sort
 .
 
 Inductive term : Type :=
@@ -16,6 +17,9 @@ Inductive term : Type :=
 | tPair (u v : term)
 | tPi1 (p : term)
 | tPi2 (p : term)
+| tEq (u v : term)
+| tRefl (u : term)
+| tJ (t p : term)
 .
 End Ast.
 
@@ -26,6 +30,9 @@ Notation "'∑' A ',' B" := (tSum A B) (at level 11, A at next level, right asso
 Notation "'∏' A ',' B" := (tProd A B) (at level 11, A at next level, right associativity, format "'∏' A ','  B") : t_scope.
 Notation "'λ,' t" := (tLambda t) (at level 11, right associativity, format "'λ,'  t") : t_scope.
 Notation "u '@' v" := (tApp u v) (at level 11, no associativity, format "u  '@'  v") : t_scope.
-Notation "'⟨' u ',' v '⟩'" := (tPair u v) (at level 9, no associativity, format "'⟨' u ','  v '⟩'") : t_scope.
+Notation "'⟨' u ',' v '⟩'" := (tPair u v) (at level 9, left associativity, format "'⟨' u ','  v '⟩'") : t_scope.
 Notation "'π₁' x" := (tPi1 x) (at level 9, right associativity, format "'π₁'  x") : t_scope.
 Notation "'π₂' x" := (tPi2 x) (at level 9, right associativity, format "'π₂'  x") : t_scope.
+Notation "u == v" := (tEq u v) (at level 9, right associativity, format "u '==' v") : t_scope.
+Notation "Refl( u )" := (tRefl u) (at level 9, right associativity, format "'Refl(' u ')'") : t_scope.
+Notation "J( t , p )" := (tJ t p) (at level 9, right associativity, format "'J(' t ',' p ')'") : t_scope.
