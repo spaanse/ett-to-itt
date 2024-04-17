@@ -7,13 +7,14 @@ Reserved Notation "a '≡' b" (at level 50, format "'[' a '/' '≡' '/'  b ']'")
 Reserved Notation "a '⇒' b" (at level 50, format "'[' a '/' '⇒' '/'  b ']'").
 
 Open Scope t_scope.
+Open Scope subst_scope.
 Section Conversion.
 Declare Scope r_scope.
 
 
 Inductive red1 : term -> term -> Prop :=
 | red1_beta_app u t
-: (λ,t) @ u ▷ (subst u 0 t)
+: (λ,t) @ u ▷ t[u]
 
 | red1_beta_pi1 u v
 : π₁ ⟨u, v⟩ ▷ u
@@ -22,7 +23,7 @@ Inductive red1 : term -> term -> Prop :=
 : π₂ ⟨u, v⟩ ▷ v
 
 | red1_beta_J t x
-: J(t, Refl(x)) ▷ (subst x 0 t)
+: J(t, Refl(x)) ▷ t[x]
 
 | red1_eta_lambda f
 : λ,(lift 1 0 f) @ ^0 ▷ f
@@ -117,13 +118,13 @@ Inductive parred : term -> term -> Prop :=
 | parred_sort s
 : *s ⇒ *s
 | parred_beta_app t t' u u'
-: t ⇒ t' -> u ⇒ u' -> (λ,t) @ u ⇒ (subst u' 0 t')
+: t ⇒ t' -> u ⇒ u' -> (λ,t) @ u ⇒ t'[u']
 | parred_beta_pi1 u u' v v'
 : u ⇒ u' -> v ⇒ v' -> π₁ ⟨u, v⟩ ⇒ u'
 | parred_beta_pi2 u u' v v'
 : u ⇒ u' -> v ⇒ v' -> π₂ ⟨u, v⟩ ⇒ v'
 | parred_beta_J t t' x x'
-: t ⇒ t' -> x ⇒ x' -> J(t, Refl(x)) ⇒ (subst x' 0 t')
+: t ⇒ t' -> x ⇒ x' -> J(t, Refl(x)) ⇒ t'[x']
 (* | parred_eta_lambda f f'
 : f ⇒ f' -> (λ, (lift 1 0 f) @ ^0) ⇒ f'
 | parred_eta_pair p p'
@@ -157,7 +158,7 @@ match t with
 | ∏A, B => ∏ parred_nf A, parred_nf B
 (* | λ, f @ ^0 => parred_nf f *)
 | λ, t => λ, parred_nf t
-| (λ, f) @ v => subst (parred_nf v) 0 (parred_nf f)
+| (λ, f) @ v => (parred_nf f)[parred_nf v]
 | u @ v => parred_nf u @ parred_nf v
 | ∑ A, B => ∑ parred_nf A, parred_nf B
 (* TODO: missing pattern for pair_eta *)
@@ -168,7 +169,7 @@ match t with
 | π₂ p => π₂ (parred_nf p)
 | u == v => (parred_nf u) == (parred_nf v)
 | Refl(u) => Refl(parred_nf u)
-| J(t, Refl(x)) => subst (parred_nf x) 0 (parred_nf t)
+| J(t, Refl(x)) => (parred_nf t)[parred_nf x]
 | J(t, p) => J(parred_nf t, parred_nf p)
 end.
 
@@ -189,11 +190,11 @@ Lemma lift_red1 (u v : term) (uv : u ▷ v) (n k : nat)
 Proof.
   revert n k. induction uv; intros m k;
   unfold lift; simpl; subst_helper; eauto using red1.
-  - replace (lift m k (subst u 0 t)) with (subst (lift m k u) 0 (lift m (k+1) t)).
+  - replace (lift m k t[u]) with (lift m (k+1) t)[lift m k u].
     apply red1_beta_app.
     replace k with (k + 0) by lia.
     rewrite lift_subst. f_equal; f_equal; lia.
-  - replace (lift m k (subst x 0 t)) with (subst (lift m k x) 0 (lift m (k+1) t)).
+  - replace (lift m k t[x]) with (lift m (k+1) t)[lift m k x].
     apply red1_beta_J.
     replace k with (k + 0) by lia.
     rewrite lift_subst. f_equal; f_equal; lia.
@@ -285,7 +286,7 @@ Proof.
 Qed.
 
 Lemma subst_red (u u' v v' : term) (uu' : u ▸ u') (vv' : v ▸ v') (n : nat)
-: subst u n v ▸ subst u' n v'.
+: v[n ← u] ▸ v'[n ← u'].
 Proof.
   revert n u u' uu'. induction vv'; intros n x x' xx'.
   - revert n x x' xx'. induction u; intros m x x' xx'; simpl in *.
@@ -321,7 +322,7 @@ Proof.
       rewrite subst_subst.
       replace (n + 0 + 0) with (n + 0) by lia.
       apply red_refl.
-    + replace (subst x (S n) (lift 1 0 f)) with (lift 1 0 (subst x n f)).
+    + replace (lift 1 0 f)[S n ← x] with (lift 1 0 f[n ← x]).
       eapply red_red1. apply red1_eta_lambda. apply red_refl.
       replace n with (n + 0) by lia.
       rewrite lift_subst'.
@@ -351,30 +352,29 @@ Proof.
   intros uv.
   revert n k. induction uv; intros m k;
   unfold lift; simpl; subst_helper; eauto using parred.
-  - replace (lift m k (subst u' 0 t')) with (subst (lift m k u') 0 (lift m (k+1) t')).
+  - replace (lift m k t'[u']) with (lift m (k+1) t')[lift m k u'].
     { apply parred_beta_app; eauto. }
     replace k with (k + 0) by lia.
     rewrite lift_subst. f_equal; f_equal; lia.
-  - replace (lift m k (subst x' 0 t')) with (subst (lift m k x') 0 (lift m (k+1) t')).
+  - replace (lift m k t'[x']) with (lift m (k+1) t')[lift m k x'].
     { apply parred_beta_J; eauto. }
     replace k with (k + 0) by lia.
     rewrite lift_subst. f_equal; f_equal; lia.
 Qed.
 
 Lemma subst_parred (u u' v v' : term) (n : nat)
-: u ⇒ u' -> v ⇒ v' -> subst u n v ⇒ subst u' n v'.
+: u ⇒ u' -> v ⇒ v' -> v[n ← u] ⇒ v'[n ← u'].
 Proof.
   intros uu' vv'.
   revert n. induction vv'; intros m; simpl in *; eauto using parred.
   - comp_cases; eauto using parred.
     apply lift_parred. assumption.
-  - replace (subst u' m (subst u'0 0 t')) with (subst (subst u' m u'0) 0 (subst u' (S m) t')).
+  - replace t'[u'0][m ← u'] with t'[S m ← u'][u'0[m ← u']].
     apply parred_beta_app; [apply IHvv'1 | apply IHvv'2].
-    (* subst (subst u m v) k (subst u (S m + k) t) = subst u (m + k) (subst v k t). *)
     replace (S m) with (S m + 0) by lia.
     rewrite subst_subst.
     f_equal. lia.
-  - replace (subst u' m (subst x' 0 t')) with (subst (subst u' m x') 0 (subst u' (S m) t')).
+  - replace t'[x'][m ← u'] with t'[S m ← u'][x'[m ← u']].
     apply parred_beta_J; eauto.
     replace (S m) with (S m + 0) by lia.
     rewrite subst_subst.

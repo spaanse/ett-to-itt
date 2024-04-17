@@ -1,7 +1,13 @@
 From Coq Require Import Nat Lia List Arith.PeanoNat Logic.FunctionalExtensionality.
 Require Import Ast Tactics.
+Open Scope t_scope.
+Declare Scope subst_scope.
+Reserved Notation "t [ u ]" (at level 7, left associativity).
+Reserved Notation "t [ u1 , u2 , .. , un ]" (at level 7, left associativity).
+Reserved Notation "t [ n ← u ]" (at level 7, left associativity).
 
 Section Subst.
+Open Scope subst_scope.
 
 Definition id : nat -> nat :=
   fun i => i.
@@ -17,19 +23,18 @@ Definition skip (f : nat -> nat) (n : nat) : nat -> nat :=
 
 Fixpoint update_rel (f : nat -> nat) (t : term) : term :=
 match t with
-| tRel i => 
-    tRel (f i)
-| tLambda t => tLambda (update_rel (skip f 1) t)
-| tApp u v => tApp (update_rel f u) (update_rel f v)
-| tProd A B => tProd (update_rel f A) (update_rel (skip f 1) B)
-| tSum A B => tSum (update_rel f A) (update_rel (skip f 1) B)
-| tPair u v => tPair (update_rel f u) (update_rel f v)
-| tPi1 p => tPi1 (update_rel f p)
-| tPi2 p => tPi2 (update_rel f p)
-| tSort s => tSort s
-| tEq u v => tEq (update_rel f u) (update_rel f v)
-| tRefl u => tRefl (update_rel f u)
-| tJ t p => tJ (update_rel (skip f 1) t) (update_rel f p)
+| ^i => ^(f i)
+| λ, t => λ, update_rel (skip f 1) t
+| u @ v => (update_rel f u) @ (update_rel f v)
+| ∏A, B => ∏update_rel f A, update_rel (skip f 1) B
+| ∑A, B => ∑update_rel f A, update_rel (skip f 1) B
+| ⟨u, v⟩ => ⟨update_rel f u, update_rel f v⟩
+| π₁ p => π₁ (update_rel f p)
+| π₂ p => π₂ (update_rel f p)
+| *s => *s
+| u == v => (update_rel f u) == (update_rel f v)
+| Refl(u) => Refl(update_rel f u)
+| J(t, p) => J(update_rel (skip f 1) t, update_rel f p)
 end.
 
 Definition lift n k t := (update_rel (skip (jump n) k) t).
@@ -137,24 +142,28 @@ end.
 
 Fixpoint subst (t : term) (k : nat) (u : term) :=
 match u with
-  | tRel n =>
+  | ^n =>
       match n ?= k with
       | Eq => lift k 0 t
-      | Lt => tRel n
-      | Gt => tRel (pred n)
+      | Lt => ^n
+      | Gt => ^(pred n)
       end
-  | tLambda M => tLambda (subst t (S k) M)
-  | tApp u v => tApp (subst t k u) (subst t k v)
-  | tProd A B => tProd (subst t k A) (subst t (S k) B)
-  | tSum A B => tSum (subst t k A) (subst t (S k) B)
-  | tPair u v => tPair (subst t k u) (subst t k v)
-  | tPi1 p => tPi1 (subst t k p)
-  | tPi2 p => tPi2 (subst t k p)
-  | tSort s => tSort s
-  | tEq u v => tEq (subst t k u) (subst t k v)
-  | tRefl u => tRefl (subst t k u)
-  | tJ u p => tJ (subst t (S k) u) (subst t k p)
-end.
+  | *s => *s
+  | λ, M => λ, M[S k ← t]
+  | u @ v => u[k ← t] @ v[k ← t]
+  | ∏A, B => ∏A[k ← t], B[S k ← t]
+  | ∑A, B => ∑A[k ← t], B[S k ← t]
+  | ⟨u, v⟩ => ⟨u[k ← t], v[k ← t]⟩
+  | π₁ p => π₁ p[k ← t]
+  | π₂ p => π₂ p[k ← t]
+  | u == v => u[k ← t] == v[k ← t]
+  | Refl(u) => Refl(u[k← t])
+  | J(u, p) => J(u[S k ← t], p[k ← t])
+end
+where "t [ n ← u ]" := (subst u n t).
+Notation "t [ u ]" := (subst u 0 t).
+Notation "t [ u1 , u2 , .. , un ]" := (subst u1 0 (subst u2 0 .. (subst un 0 t) .. )).
+
 
 Lemma unlift_lift (n k : nat) (t : term) : unlift n k (lift n k t) = t.
 Proof.
@@ -206,7 +215,7 @@ Proof.
 Qed.
 
 Lemma subst_lift (u v : term) (n k i : nat) (k_lt_i : k <= i) (i_le_nk : i <= n + k)
-: subst u i (lift (S n) k v) = lift n k v.
+: (lift (S n) k v)[i ← u] = lift n k v.
 Proof.
   revert k i k_lt_i i_le_nk. induction v; intros k i k_lt_i i_le_nk;
   unfold lift, update_rel; fold update_rel; simpl; f_equal; eauto with arith.
@@ -235,6 +244,10 @@ Proof.
   unfold skip, jump. comp_cases.
 Qed.
 End Subst.
+Open Scope subst_scope.
+Notation "t [ n ← u ]" := (subst u n t).
+Notation "t [ u ]" := (subst u 0 t).
+Notation "t [ u1 , u2 , .. , un ]" := (subst u1 0 (subst u2 0 .. (subst un 0 t) .. )).
 
 Ltac subst_helper :=
 repeat match goal with
@@ -276,7 +289,7 @@ Proof.
 Qed.
 
 Lemma lift_subst (u v : term) (n k i : nat)
-: lift n (k + i) (subst u i v) = subst (lift n k u) i (lift n (S k + i) v).
+: lift n (k + i) (v[i ← u]) = (lift n (S k + i) v)[i ← lift n k u].
 Proof.
   revert n k i; induction v; intros m k i;
   unfold lift, subst; simpl; subst_helper; fold subst.
@@ -333,7 +346,7 @@ Proof.
 Qed.
 
 Lemma lift_subst' (u v : term) (n k i : nat)
-: lift k i (subst u (n + i) v) = subst u (n + k + i) (lift k i v).
+: lift k i v[n + i ← u] = (lift k i v)[n + k + i ← u].
 Proof.
   revert n k i. induction v; intros m k i; simpl;
   unfold lift; simpl; subst_helper; [| |f_equal ..]; eauto.
@@ -360,7 +373,7 @@ Proof.
 Qed.
 
 Lemma subst_subst (u v t : term) (m k : nat)
-: subst (subst u m v) k (subst u (S m + k) t) = subst u (m + k) (subst v k t).
+: t[S m + k ← u][k ← v[m ← u]] = t[k ← v][m + k ← u].
 Proof.
   revert u m k; induction t; intros u m k;
   simpl; [comp_cases; simpl; comp_cases|f_equal ..]; eauto.

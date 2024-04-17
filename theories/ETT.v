@@ -41,13 +41,13 @@ Inductive typed: context -> term -> term -> Prop :=
   Γ ,, A ⊢ₓ B : *s2 ->
   Γ ⊢ₓ t : ∏A, B ->
   Γ ⊢ₓ u : A ->
-  Γ ⊢ₓ t @ u : (subst u 0 B)
+  Γ ⊢ₓ t @ u : B[u]
 
 | tyPair (Γ : context) (s1 s2 : sort) (A B u v : term)
 : Γ ⊢ₓ u : A ->
   Γ ⊢ₓ A : *s1 ->
   Γ ,, A ⊢ₓ B : *s2 ->
-  Γ ⊢ₓ v : (subst u 0 B) ->
+  Γ ⊢ₓ v : B[u] ->
   Γ ⊢ₓ ⟨u, v⟩ : ∑A, B
 
 | tyPi1 (Γ : context) (A B p : term)
@@ -56,7 +56,7 @@ Inductive typed: context -> term -> term -> Prop :=
 
 | tyPi2 (Γ : context) (A B p : term)
 : Γ ⊢ₓ p : ∑A, B ->
-  Γ ⊢ₓ π₂ p : (subst (π₁ p) 0 B)
+  Γ ⊢ₓ π₂ p : B[π₁ p]
 
 | tyEq (Γ : context) (s : sort) (A u v : term)
 : Γ ⊢ₓ A : *s ->
@@ -71,12 +71,11 @@ Inductive typed: context -> term -> term -> Prop :=
 
 | tyJ (Γ : context) (s : sort) (A C t p x y : term)
 : Γ ,, A ,, A ,, (^1 == ^0) ⊢ₓ C : *s ->
-  Γ ,, A ⊢ₓ t : (subst Refl(^0) 0 (subst ^0 0 (subst ^0 0 C))) ->
+  Γ ,, A ⊢ₓ t : C[^0, ^0, Refl(^0)] ->
   Γ ⊢ₓ x : A ->
   Γ ⊢ₓ y : A ->
   Γ ⊢ₓ p : x == y ->
-  Γ ⊢ₓ J(t,p) : (subst p 0 (subst y 0 (subst x 0 C)))
-  
+  Γ ⊢ₓ J(t,p) : C[x, y, p]
 
 | tyConv (Γ : context) (s : sort) (A B u : term)
 : Γ ⊢ₓ u : A ->
@@ -116,27 +115,27 @@ with eq_typed : context -> term -> term -> term -> Prop :=
   Γ ,, A ⊢ₓ B : *s2 ->
   Γ ,, A ⊢ₓ t : B ->
   Γ ⊢ₓ u : A ->
-  Γ ⊢ₓ (λ, t) @ u ≡ (subst u 0 t) : (subst u 0 B) 
+  Γ ⊢ₓ (λ, t) @ u ≡ t[u] : B[u] 
 
 | eqPi1Comp (Γ : context) (s1 s2 : sort) (u v A B : term)
 : Γ ⊢ₓ A : *s1 ->
   Γ ⊢ₓ u : A ->
   Γ ,, A ⊢ₓ B : *s2 ->
-  Γ ⊢ₓ v : (subst u 0 B) ->
+  Γ ⊢ₓ v : B[u] ->
   Γ ⊢ₓ π₁ ⟨u, v⟩ ≡ u : A
 
 | eqPi2Comp (Γ : context) (s1 s2 : sort) (u v A B : term)
 : Γ ⊢ₓ A : *s1 ->
   Γ ⊢ₓ u : A ->
   Γ ,, A ⊢ₓ B : *s2 ->
-  Γ ⊢ₓ v : (subst u 0 B) ->
-  Γ ⊢ₓ π₂ ⟨u, v⟩ ≡ v : (subst u 0 B)
+  Γ ⊢ₓ v : B[u] ->
+  Γ ⊢ₓ π₂ ⟨u, v⟩ ≡ v : B[u]
 
 | eqJComp (Γ : context) (s : sort) (t x A C : term)
 : Γ ,, A ,, A ,, (^1 == ^0) ⊢ₓ C : *s ->
-  Γ ,, A ⊢ₓ t : (subst Refl(^0) 0 (subst ^0 0 (subst ^0 0 C))) ->
+  Γ ,, A ⊢ₓ t : C[^0, ^0, Refl(^0)] ->
   Γ ⊢ₓ x : A ->
-  Γ ⊢ₓ J(t, Refl(x)) ≡ (subst x 0 t) : (subst Refl(x) 0 (subst x 0 (subst x 0 C)))
+  Γ ⊢ₓ J(t, Refl(x)) ≡ t[x] : C[x, x, Refl(x)]
 
 | eqLambdaEta (Γ : context) (s1 s2 : sort) (f A B : term)
 : Γ ⊢ₓ A : *s1 ->
@@ -162,7 +161,7 @@ with eq_typed : context -> term -> term -> term -> Prop :=
 | eqAppCong (Γ : context) (A B t1 t2 u1 u2 : term)
 : Γ ⊢ₓ u1 ≡ u2 : A ->
   Γ ⊢ₓ t1 ≡ t2 : ∏A, B ->
-  Γ ⊢ₓ t1 @ u1 ≡ t2 @ u2 : (subst u1 0 B)
+  Γ ⊢ₓ t1 @ u1 ≡ t2 @ u2 : B[u1]
 
 | eqSumCong (Γ : context) (s1 s2 : sort) (A1 A2 B1 B2 : term)
 : Γ ⊢ₓ A1 ≡ A2 : *s1 ->
@@ -180,7 +179,7 @@ with eq_typed : context -> term -> term -> term -> Prop :=
 
 | eqPi2Cong (Γ : context) (A B p1 p2 : term)
 : Γ ⊢ₓ p1 ≡ p2 : ∑A, B ->
-  Γ ⊢ₓ π₂ p1 ≡ π₂ p2 : subst (tPi1 p1) 0 B
+  Γ ⊢ₓ π₂ p1 ≡ π₂ p2 : B[π₁ p1]
 
 | eqEqCong (Γ : context) (s : sort) (A u u' v v' : term)
 : Γ ⊢ₓ u ≡ u' : A ->
