@@ -385,3 +385,21 @@ Proof.
   - apply IHt.
   - apply IHt.
 Qed.
+
+Lemma lift_injective (u v : term) (n k : nat)
+: lift n k u = lift n k v -> u = v.
+Proof.
+  revert v n k; induction u; intros v m k ulvl;
+  destruct v; try discriminate ulvl;
+  unfold lift in ulvl; simpl in ulvl; subst_helper.
+  - injection ulvl as ulvl. unfold skip, jump in *.
+    f_equal. revert ulvl. comp_cases.
+  - assumption.
+  - injection ulvl as ulvl1 ulvl2. f_equal; eauto.
+  - injection ulvl as ulvl. f_equal. eauto.
+  - injection ulvl as ulvl1 ulvl2. f_equal; eauto.
+  - injection ulvl as ulvl1 ulvl2. f_equal; eauto.
+  - injection ulvl as ulvl1 ulvl2. f_equal; eauto.
+  - injection ulvl as ulvl. f_equal. eauto.
+  - injection ulvl as ulvl. f_equal. eauto.
+Qed.
