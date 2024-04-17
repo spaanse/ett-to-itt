@@ -72,3 +72,5 @@ Proof.
   all: subst; eauto.
   all: eauto using subeq_sub, subterm_trans'.
 Qed.
+
+Ltac subterm_solve := eauto using subterm, subterm_eq.

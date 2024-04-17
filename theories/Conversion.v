@@ -55,7 +55,7 @@ Inductive parred : term -> term -> Prop :=
 | parred_beta_pi2 u u' v v' : u ⇒ u' -> v ⇒ v' -> π₂ ⟨u, v⟩ ⇒ v'
 | parred_beta_J t t' x x'   : t ⇒ t' -> x ⇒ x' -> J(t, Refl(x)) ⇒ t'[x']
 (* | parred_eta_lambda f f'    : f ⇒ f' -> (λ, (lift 1 0 f) @ ^0) ⇒ f' *)
-(* | parred_eta_pair p p'      : p ⇒ p' -> ⟨π₁ p,π₂ p⟩ ⇒ p' *)
+| parred_eta_pair p p'      : p ⇒ p' -> ⟨π₁ p,π₂ p⟩ ⇒ p'
 | parred_prod A A' B B'     : A ⇒ A' -> B ⇒ B' -> ∏ A, B ⇒ ∏ A', B'
 | parred_lambda t t'        : t ⇒ t' -> λ, t ⇒ λ, t'
 | parred_app u u' v v'      : u ⇒ u' -> v ⇒ v' -> u @ v ⇒ u' @ v'
@@ -78,8 +78,15 @@ match t with
 | (λ, f) @ v    => (parred_nf f)[parred_nf v]
 | u @ v         => parred_nf u @ parred_nf v
 | ∑ A, B        => ∑ parred_nf A, parred_nf B
-(* TODO: missing pattern for pair_eta *)
-| ⟨u, v⟩        => (tPair (parred_nf u) (parred_nf v))
+| ⟨u, v⟩ =>
+  match u, v with
+  | π₁ p, π₂ q =>
+    match (term_eq_dec p q) with
+    | left _      => parred_nf p
+    | right _     => ⟨parred_nf u, parred_nf v⟩
+    end
+  | _, _ => ⟨parred_nf u, parred_nf v⟩
+  end
 | π₁ ⟨u,v⟩      => parred_nf u
 | π₁ p          => π₁ (parred_nf p)
 | π₂ ⟨u,v⟩      => parred_nf v
@@ -89,7 +96,6 @@ match t with
 | J(t, Refl(x)) => (parred_nf t)[parred_nf x]
 | J(t, p)       => J(parred_nf t, parred_nf p)
 end.
-
 
 End Conversion.
 
@@ -273,6 +279,9 @@ Proof.
     { apply parred_beta_app; eauto. }
     replace k with (k + 0) by lia.
     rewrite lift_subst. f_equal; f_equal; lia.
+  (* - replace (lift m (k + 1) (lift 1 0 f)) with (lift 1 0 (lift m k f)) by apply lift_lift'.
+    replace (skip (jump m) (k + 1) 0) with 0 by (unfold skip, jump; comp_cases).
+    apply parred_eta_lambda. apply IHuv. *)
   - replace (lift m k t'[x']) with (lift m (k+1) t')[lift m k x'].
     { apply parred_beta_J; eauto. }
     replace k with (k + 0) by lia.
@@ -296,7 +305,197 @@ Proof.
     replace (S m) with (S m + 0) by lia.
     rewrite subst_subst.
     f_equal. lia.
+  (* - replace (subst u (S m) (lift 1 0 f)) with (lift 1 0 (subst u m f)).
+    { apply parred_eta_lambda. apply IHvv'. }
+    replace m with (m + 0) by lia.
+    rewrite lift_subst'. f_equal. lia. *)
 Qed.
+
+(* Lemma parred_diamond {u v w : term} (uv : u ⇒ v) (uw : u ⇒ w)
+: exists t, v ⇒ t /\ w ⇒ t.
+Proof.
+  revert w uw. induction uv; intros w uw; inversion uw; subst.
+  - exists ^n. split; eauto using parred.
+  -  exists *s. split; eauto using parred.
+  - destruct (IHuv1 _ H1) as [x [t'x t'0x]].
+    destruct (IHuv2 _ H3) as [y [u'y u'0y]].
+    exists (subst y 0 x).
+    split; apply subst_parred; assumption.
+  - inversion H1. subst.
+    + assert (fw : lift 1 0 f @ ^0 ⇒ lift 1 0 u'0 @ ^0).
+      { apply parred_app. apply lift_parred. assumption. apply parred_rel. }
+      destruct (IHuv1 _ fw) as [x [? ?]].
+      destruct (IHuv2 _ H3) as [y [? ?]].
+      exists (subst y 0 x). split.
+      * apply subst_parred; assumption.
+      * admit.
+        
+    + destruct (IHuv1 _ H0) as [x [? ?]].
+      destruct (IHuv2 _ H3) as [y [? ?]].
+      exists (subst y 0 x). split; [apply subst_parred|apply parred_beta_app]; assumption.
+  - destruct (IHuv1 _ H1) as [x [u'x wx]].
+    exists x. split; assumption.
+  - admit.
+  - destruct (IHuv2 _ H3) as [x [u'x wx]].
+    exists x. split; assumption.
+  - admit.
+  - assert (eq : f0 = f). { eapply lift_injective. eassumption. }
+    rewrite eq in *.
+    apply IHuv. assumption.
+  - admit.
+  - apply IHuv. assumption.
+  - admit.
+  - destruct (IHuv1 _ H1) as [x [A'x wx]].
+    destruct (IHuv2 _ H3) as [y [B'y wy]].
+    exists (∏x, y). split; apply parred_prod; assumption.
+  - admit.
+  - destruct (IHuv _ H0) as [x [t'x wx]].
+    exists (λ, x). split; apply parred_lambda; assumption.
+  - admit.
+  - destruct (IHuv1 _ H1) as [x [u'x wx]].
+    destruct (IHuv2 _ H3) as [y [v'y wy]].
+    exists (x @ y). split; apply parred_app; assumption.
+  - destruct (IHuv1 _ H1) as [x [A'x wx]].
+    destruct (IHuv2 _ H3) as [y [B'y wy]].
+    exists (∑x, y). split; apply parred_sum; assumption.
+  - admit.
+  - destruct (IHuv1 _ H1) as [x [u'x wx]].
+    destruct (IHuv2 _ H3) as [y [v'y wy]].
+    exists (⟨x, y⟩). split; apply parred_pair; assumption.
+  - admit.
+  - destruct (IHuv _ H0) as [x [p'x wx]].
+    exists (π₁ x). split; apply parred_pi1; assumption.
+  - admit.
+  - destruct (IHuv _ H0) as [x [p'x wx]].
+    exists (π₂ x). split; apply parred_pi2; assumption.
+Admitted. *)
+
+Lemma sumboolT T P (b : {P} + {~ P}) x y : P -> (if b then x else y) = x :> T.
+Proof.
+intros; destruct b; tauto.
+Qed.
+
+Lemma sumboolF T P (b : {P} + {~ P}) x y : ~ P -> (if b then x else y) = y :> T.
+Proof.
+intros; destruct b; tauto.
+Qed.
+    
+(* ⟨π₁ ⟨π₁ p,π₂ p⟩, π₂ ⟨π₁ p, π₂ p⟩⟩ *)
+
+Lemma red_wcr (u v w : term)
+: u ▷ v -> u ▷ w -> exists x : term, v ▸ x /\ w ▸ x.
+Proof.
+  revert v w.
+  induction u using term_strong_ind.
+  intros v w uv uw.
+  destruct u; inversion uv; inversion uw; subst;
+  repeat match goal with
+  | H : ?x = _ |- _ => subst x
+  | H : _ = ?x |- _ => subst x
+  | H : _ = _ |- _ => discriminate H
+  | H : ?x = ?x |- _ => clear H
+  | H : ?f _ = ?f _ |- _ => progress injection H as H
+  | H : ?f _ _ = ?f _ _ |- _ => progress injection H as H
+  | H : ?f _ _ _ = ?f _ _ _ |- _ => progress injection H as H
+  | H : lift ?n ?k ?v = lift ?n ?k ?w |- _ => apply lift_injective in H
+  | |- exists x, ?u ▸ x /\ ?u ▸ x => ( exists u; split; apply red_refl )
+  | H : forall u, subterm u ?t -> forall v w, u ▷ v -> u ▷ w -> exists x, v ▸ x /\ w ▸ x,
+    uv : ?u ▷ ?v, uw : ?u ▷ ?w |- _ => try (
+      let ut := fresh "ut" in
+      assert (ut : subterm u t) by subterm_solve ;
+      destruct (H u ut v w uv uw)
+    )
+  end.
+  
+  - assert (s_u1 : subterm u1 (∏u1, u2)) by subterm_solve.
+    destruct (H _ s_u1 _ _ H3 H7) as [u [A'u  A'0u]].
+    exists (∏u, u2).
+    split; apply red_prod_cong; eauto using red.
+  - exists (∏A', B').
+    split; apply red_prod_cong; eauto using red.
+  - exists (∏A', B').
+    split; apply red_prod_cong; eauto using red.
+  - assert (s_u2 : subterm u2 (∏u1, u2)) by subterm_solve.
+    destruct (H _ s_u2 _ _ H3 H7) as [u [B'u  B'0u]].
+    exists (∏u1, u).
+    split; apply red_prod_cong; eauto using red.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - injection H4 as <-.
+    exists w. split; eauto using red.
+  - 
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+
+
+Qed.
+
+(* Lemma red_nf_wcr (u : term)
+: forall v : term, u ⇒ v -> v ▸ (parred_nf u).
+Proof.
+  induction u using term_strong_ind; intros v uv.
+  inversion uv; simpl; subst; eauto using red, red1.
+  - apply subst_red.
+    + apply H. subterm_solve. assumption.
+    + apply H. subterm_solve. assumption.
+  - apply H. subterm_solve. assumption.
+  - apply H. subterm_solve. assumption.
+  - apply subst_red.
+    + apply H. subterm_solve. assumption.
+    + apply H. subterm_solve. assumption.
+  - rewrite sumboolT by reflexivity.
+    apply H. subterm_solve. assumption.
+  - apply red_prod_cong.
+    + apply H. subterm_solve. assumption.
+    + apply H. subterm_solve. assumption.
+  - apply red_lambda_cong.
+    apply H. subterm_solve. assumption.
+  - apply H in H0. 2: { subterm_solve. }
+    apply H in H1. 2: { subterm_solve. }
+    destruct u0; try (apply red_app_cong; assumption).
+    apply (@red_trans _ ((parred_nf (λ, u0)) @ (parred_nf v0))).
+    + apply red_app_cong; assumption.
+    + simpl. eapply red_red1. { apply red1_beta_app. }
+      apply red_refl.
+  - apply red_sum_cong.
+    + apply H. subterm_solve. assumption.
+    + apply H. subterm_solve. assumption.
+  - assert (Hu : u' ▸ parred_nf u0). { apply H. subterm_solve. assumption. }
+    assert (Hv : v' ▸ parred_nf v0). { apply H. subterm_solve. assumption. }
+    destruct u0; try ( apply red_pair_cong; assumption ).
+    destruct v0; try ( apply red_pair_cong; assumption ).
+    destruct (term_eq_dec u0 v0) as [<-|neq].
+    + apply (@red_trans _ ⟨π₁ (parred_nf u0), π₂ (parred_nf u0)⟩).
+      2: { eauto using red, red1. }
+      destruct u0; simpl in *;
+      try ( apply red_pair_cong; assumption ).
+      
+    + apply red_pair_cong; assumption.
+
+  
+
+
+Qed. *)
 
 Lemma parred_strong_diamond (u : term)
 : forall v : term, u ⇒ v -> v ⇒ (parred_nf u).
@@ -305,9 +504,14 @@ Proof.
     induction uv; eauto using parred.
     - simpl. apply subst_parred; assumption.
     - simpl. apply subst_parred; assumption.
+    - simpl. rewrite sumboolT by reflexivity. assumption.
     - destruct uv1; eauto using parred.
       simpl in *. inversion IHuv1.
       apply parred_beta_app; assumption.
+    - destruct u; eauto using parred.
+      destruct v; eauto using parred.
+      simpl. destruct (term_eq_dec u v) as [<-|neq].
+      + simpl in *.
     - destruct uv; eauto using parred.
       simpl in *. inversion IHuv.
       eapply parred_beta_pi1; eassumption.
@@ -337,8 +541,6 @@ Lemma red1_parred u v
 Proof.
   intro uv.
   induction uv; eauto using parred, parred_refl.
-  - admit.
-  - admit.
 Admitted.
 
 Lemma parred_red u v
@@ -411,3 +613,19 @@ Proof.
     destruct (red_cr vx vy) as [z [xz yz]].
     eapply red_conv; eapply red_trans; eassumption.
 Qed.
+
+Lemma parred_example_1 p
+: ⟨π₁ ⟨π₁ p,π₂ p⟩, π₂ ⟨π₁ p,π₂ p⟩⟩ ⇒ p.
+Proof.
+  apply parred_eta_pair.
+  apply parred_eta_pair.
+  apply parred_identity.
+Qed.
+
+Lemma parred_example_2 p
+: ⟨π₁ ⟨π₁ p,π₂ p⟩, π₂ ⟨π₁ p,π₂ p⟩⟩ ⇒ ⟨π₁ p, π₂ p⟩.
+Proof.
+  apply parred_eta_pair.
+  apply parred_identity.
+Qed.
+

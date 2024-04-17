@@ -6,6 +6,7 @@ Inductive sort : Type :=
 | sSig : sort -> sort -> sort
 | sEq : sort -> sort
 .
+Scheme Equality for sort.
 
 Inductive term : Type :=
 | tRel (n : nat)
@@ -22,6 +23,7 @@ Inductive term : Type :=
 | tJ (t p : term)
 .
 End Ast.
+Scheme Equality for term.
 
 Declare Scope t_scope.
 Notation "'*' s" := (tSort s) (at level 8, format "'*' s") : t_scope.
