@@ -6,6 +6,7 @@ theories/Ast.v
 theories/SafeNth.v
 theories/Subst.v
 theories/ETT.v
+theories/Subterm.v
 theories/Conversion.v
 theories/ITT.v
 # theories/SigmaAssoc.v

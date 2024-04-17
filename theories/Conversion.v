@@ -1,4 +1,5 @@
-Require Import Ast Subst Tactics Lia.
+From Coq Require Import Program.Equality Lia.
+Require Import Ast Subst Tactics Subterm.
 
 Reserved Notation "a '▷' b" (at level 50, format "'[' a '/' '▷' '/'  b ']'").
 Reserved Notation "a '▸' b" (at level 50, format "'[' a '/' '▸' '/'  b ']'").
