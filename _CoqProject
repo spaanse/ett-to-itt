@@ -3,6 +3,7 @@
 
 theories/Tactics.v
 theories/Ast.v
+theories/SafeNth.v
 theories/Subst.v
 theories/ETT.v
 theories/Conversion.v
