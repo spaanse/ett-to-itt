@@ -11,99 +11,34 @@ Open Scope subst_scope.
 Section Conversion.
 Declare Scope r_scope.
 
-
 Inductive red1 : term -> term -> Prop :=
-| red1_beta_app u t
-: (λ,t) @ u ▷ t[u]
-
-| red1_beta_pi1 u v
-: π₁ ⟨u, v⟩ ▷ u
-
-| red1_beta_pi2 u v
-: π₂ ⟨u, v⟩ ▷ v
-
-| red1_beta_J t x
-: J(t, Refl(x)) ▷ t[x]
-
-| red1_eta_lambda f
-: λ,(lift 1 0 f) @ ^0 ▷ f
-
-| red1_eta_pair p
-: ⟨π₁ p,π₂ p⟩ ▷ p
-
-| red1_prod_cong1 A A' B
-: A ▷ A' ->
-  ∏ A, B ▷ ∏ A', B
-
-| red1_prod_cong2 A B B'
-: B ▷ B' ->
-  ∏ A, B ▷ ∏ A, B'
-
-| red1_lambda_cong t t'
-: t ▷ t' ->
-  λ, t ▷ λ, t'
-
-| red1_app_cong1 u u' v
-: u ▷ u' ->
-  u @ v ▷ u' @ v
-
-| red1_app_cong2 u v v'
-: v ▷ v' ->
-  u @ v ▷ u @ v'
-
-| red1_sum_cong1 A A' B
-: A ▷ A' ->
-  ∑ A, B ▷ ∑ A', B
-
-| red1_sum_cong2 A B B'
-: B ▷ B' ->
-  ∑ A, B ▷ ∑ A, B'
-
-| red1_pair_cong1 u u' v
-: u ▷ u' ->
-  ⟨u, v⟩ ▷ ⟨u', v⟩
-
-| red1_pair_cong2 u v v'
-: v ▷ v' ->
-  ⟨u, v⟩ ▷ ⟨u, v'⟩
-
-| red1_pi1_cong p p'
-: p ▷ p' ->
-  π₁ p ▷ π₁ p'
-
-| red1_pi2_cong p p'
-: p ▷ p' ->
-  π₂ p ▷ π₂ p'
-
-| red1_eq_cong1 u u' v
-: u ▷ u' ->
-  u == v ▷ u' == v
-
-| red1_eq_cong2 u v v'
-: v ▷ v' ->
-  u == v ▷ u == v'
-
-| red1_refl_cong u u'
-: u ▷ u' ->
-  Refl(u) ▷ Refl(u')
-
-| red1_J_cong1 t t' p
-: t ▷ t' ->
-  J(t,p) ▷ J(t',p)
-
-| red1_J_cong2 t p p'
-: p ▷ p' ->
-  J(t,p) ▷ J(t,p')
-
+| red1_beta_app u t       : (λ,t) @ u ▷ t[u]
+| red1_beta_pi1 u v       : π₁ ⟨u, v⟩ ▷ u
+| red1_beta_pi2 u v       : π₂ ⟨u, v⟩ ▷ v
+| red1_beta_J t x         : J(t, Refl(x)) ▷ t[x]
+| red1_eta_lambda f       : λ,(lift 1 0 f) @ ^0 ▷ f
+| red1_eta_pair p         : ⟨π₁ p,π₂ p⟩ ▷ p
+| red1_prod_cong_l A A' B : A ▷ A' -> ∏ A, B ▷ ∏ A', B
+| red1_prod_cong_r A B B' : B ▷ B' -> ∏ A, B ▷ ∏ A, B'
+| red1_lambda_cong t t'   : t ▷ t' -> λ, t ▷ λ, t'
+| red1_app_cong_l u u' v  : u ▷ u' -> u @ v ▷ u' @ v
+| red1_app_cong_r u v v'  : v ▷ v' -> u @ v ▷ u @ v'
+| red1_sum_cong_l A A' B  : A ▷ A' -> ∑ A, B ▷ ∑ A', B
+| red1_sum_cong_r A B B'  : B ▷ B' -> ∑ A, B ▷ ∑ A, B'
+| red1_pair_cong_l u u' v : u ▷ u' -> ⟨u, v⟩ ▷ ⟨u', v⟩
+| red1_pair_cong_r u v v' : v ▷ v' -> ⟨u, v⟩ ▷ ⟨u, v'⟩
+| red1_pi1_cong p p'      : p ▷ p' -> π₁ p ▷ π₁ p'
+| red1_pi2_cong p p'      : p ▷ p' -> π₂ p ▷ π₂ p'
+| red1_eq_cong_l u u' v   : u ▷ u' -> u == v ▷ u' == v
+| red1_eq_cong_r u v v'   : v ▷ v' -> u == v ▷ u == v'
+| red1_refl_cong u u'     : u ▷ u' -> Refl(u) ▷ Refl(u')
+| red1_J_cong_l t t' p    : t ▷ t' -> J(t,p) ▷ J(t',p)
+| red1_J_cong_r t p p'    : p ▷ p' -> J(t,p) ▷ J(t,p')
 where "a '▷' b" := (red1 a b) : r_scope.
 
 Inductive red : term -> term -> Prop :=
-| red_refl u
-: u ▸ u
-| red_red1 u v w
-: u ▷ v ->
-  v ▸ w ->
-  u ▸ w
+| red_refl u     : u ▸ u
+| red_red1 u v w : u ▷ v -> v ▸ w -> u ▸ w
 where "a '▸' b" := (red a b) : r_scope.
 
 Inductive conv : term -> term -> Prop :=
@@ -113,64 +48,46 @@ Inductive conv : term -> term -> Prop :=
 where "a '≡' b" := (conv a b) : r_scope.
 
 Inductive parred : term -> term -> Prop :=
-| parred_rel n
-: ^n ⇒ ^n
-| parred_sort s
-: *s ⇒ *s
-| parred_beta_app t t' u u'
-: t ⇒ t' -> u ⇒ u' -> (λ,t) @ u ⇒ t'[u']
-| parred_beta_pi1 u u' v v'
-: u ⇒ u' -> v ⇒ v' -> π₁ ⟨u, v⟩ ⇒ u'
-| parred_beta_pi2 u u' v v'
-: u ⇒ u' -> v ⇒ v' -> π₂ ⟨u, v⟩ ⇒ v'
-| parred_beta_J t t' x x'
-: t ⇒ t' -> x ⇒ x' -> J(t, Refl(x)) ⇒ t'[x']
-(* | parred_eta_lambda f f'
-: f ⇒ f' -> (λ, (lift 1 0 f) @ ^0) ⇒ f'
-| parred_eta_pair p p'
-: p ⇒ p' -> ⟨π₁ p,π₂ p⟩ ⇒ p' *)
-| parred_prod A A' B B'
-: A ⇒ A' -> B ⇒ B' -> ∏ A, B ⇒ ∏ A', B'
-| parred_lambda t t'
-: t ⇒ t' -> λ, t ⇒ λ, t'
-| parred_app u u' v v'
-: u ⇒ u' -> v ⇒ v' -> u @ v ⇒ u' @ v'
-| parred_sum A A' B B'
-: A ⇒ A' -> B ⇒ B' -> ∑ A, B ⇒ ∑ A', B'
-| parred_pair u u' v v'
-: u ⇒ u' -> v ⇒ v' -> ⟨u, v⟩ ⇒ ⟨u', v'⟩
-| parred_pi1 p p'
-: p ⇒ p' -> π₁ p ⇒ π₁ p'
-| parred_pi2 p p'
-: p ⇒ p' -> π₂ p ⇒ π₂ p'
-| parred_eq u u' v v'
-: u ⇒ u' -> v ⇒ v' -> (u == v) ⇒ (u' == v')
-| parred_refl u u'
-: u ⇒ u' -> Refl(u) ⇒ Refl(u')
-| parred_J t t' p p'
-: t ⇒ t' -> p ⇒ p' -> J(t,p) ⇒ J(t',p')
+| parred_rel n              : ^n ⇒ ^n
+| parred_sort s             : *s ⇒ *s
+| parred_beta_app t t' u u' : t ⇒ t' -> u ⇒ u' -> (λ,t) @ u ⇒ t'[u']
+| parred_beta_pi1 u u' v v' : u ⇒ u' -> v ⇒ v' -> π₁ ⟨u, v⟩ ⇒ u'
+| parred_beta_pi2 u u' v v' : u ⇒ u' -> v ⇒ v' -> π₂ ⟨u, v⟩ ⇒ v'
+| parred_beta_J t t' x x'   : t ⇒ t' -> x ⇒ x' -> J(t, Refl(x)) ⇒ t'[x']
+(* | parred_eta_lambda f f'    : f ⇒ f' -> (λ, (lift 1 0 f) @ ^0) ⇒ f' *)
+(* | parred_eta_pair p p'      : p ⇒ p' -> ⟨π₁ p,π₂ p⟩ ⇒ p' *)
+| parred_prod A A' B B'     : A ⇒ A' -> B ⇒ B' -> ∏ A, B ⇒ ∏ A', B'
+| parred_lambda t t'        : t ⇒ t' -> λ, t ⇒ λ, t'
+| parred_app u u' v v'      : u ⇒ u' -> v ⇒ v' -> u @ v ⇒ u' @ v'
+| parred_sum A A' B B'      : A ⇒ A' -> B ⇒ B' -> ∑ A, B ⇒ ∑ A', B'
+| parred_pair u u' v v'     : u ⇒ u' -> v ⇒ v' -> ⟨u, v⟩ ⇒ ⟨u', v'⟩
+| parred_pi1 p p'           : p ⇒ p' -> π₁ p ⇒ π₁ p'
+| parred_pi2 p p'           : p ⇒ p' -> π₂ p ⇒ π₂ p'
+| parred_eq u u' v v'       : u ⇒ u' -> v ⇒ v' -> (u == v) ⇒ (u' == v')
+| parred_refl u u'          : u ⇒ u' -> Refl(u) ⇒ Refl(u')
+| parred_J t t' p p'        : t ⇒ t' -> p ⇒ p' -> J(t,p) ⇒ J(t',p')
 where "a '⇒' b" := (parred a b) : r_scope.
 
 Fixpoint parred_nf (t : term) : term :=
 match t with
-| ^n => ^n
-| *s => *s
-| ∏A, B => ∏ parred_nf A, parred_nf B
-(* | λ, f @ ^0 => parred_nf f *)
-| λ, t => λ, parred_nf t
-| (λ, f) @ v => (parred_nf f)[parred_nf v]
-| u @ v => parred_nf u @ parred_nf v
-| ∑ A, B => ∑ parred_nf A, parred_nf B
+| ^n            => ^n
+| *s            => *s
+| ∏A, B         => ∏ parred_nf A, parred_nf B
+(* | λ, f @ ^0     => parred_nf f *)
+| λ, t          => λ, parred_nf t
+| (λ, f) @ v    => (parred_nf f)[parred_nf v]
+| u @ v         => parred_nf u @ parred_nf v
+| ∑ A, B        => ∑ parred_nf A, parred_nf B
 (* TODO: missing pattern for pair_eta *)
-| ⟨u, v⟩ => (tPair (parred_nf u) (parred_nf v))
-| π₁ ⟨u,v⟩ => parred_nf u
-| π₁ p => π₁ (parred_nf p)
-| π₂ ⟨u,v⟩ => parred_nf v
-| π₂ p => π₂ (parred_nf p)
-| u == v => (parred_nf u) == (parred_nf v)
-| Refl(u) => Refl(parred_nf u)
+| ⟨u, v⟩        => (tPair (parred_nf u) (parred_nf v))
+| π₁ ⟨u,v⟩      => parred_nf u
+| π₁ p          => π₁ (parred_nf p)
+| π₂ ⟨u,v⟩      => parred_nf v
+| π₂ p          => π₂ (parred_nf p)
+| u == v        => (parred_nf u) == (parred_nf v)
+| Refl(u)       => Refl(parred_nf u)
 | J(t, Refl(x)) => (parred_nf t)[parred_nf x]
-| J(t, p) => J(parred_nf t, parred_nf p)
+| J(t, p)       => J(parred_nf t, parred_nf p)
 end.
 
 

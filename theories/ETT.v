@@ -17,12 +17,12 @@ Inductive typed: context -> term -> term -> Prop :=
 | tySort (Γ : context) (s : sort)
 : Γ ⊢ₓ *s : *(sSucc s)
 
-| tyProd (Γ : context) (s1 : sort) (s2 : sort) (A B : term)
+| tyProd (Γ : context) (s1 s2 : sort) (A B : term)
 : Γ ⊢ₓ A : *s1 ->
   Γ ,, A ⊢ₓ B : *s2 ->
   Γ ⊢ₓ ∏A, B : *(sPi s1 s2)
 
-| tySum (Γ : context) (s1 : sort) (s2 : sort) (A B : term)
+| tySum (Γ : context) (s1 s2 : sort) (A B : term)
 : Γ ⊢ₓ A : *s1 ->
   Γ ,, A ⊢ₓ B : *s2 ->
   Γ ⊢ₓ ∑A, B : *(sSig s1 s2)
