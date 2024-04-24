@@ -18,6 +18,8 @@ Inductive subterm : term -> term -> Prop :=
 | sub_refl u u' : subterm_eq u u' -> subterm u (Refl(u'))
 | sub_J_l t t' p : subterm_eq t t' -> subterm t (J(t', p))
 | sub_J_r t p p' : subterm_eq p p' -> subterm p (J(t, p'))
+| sub_tp_l p p' t : subterm_eq p p' -> subterm p (tTransport p' t)
+| sub_tp_r p t t' : subterm_eq t t' -> subterm t (tTransport p t')
 with subterm_eq : term -> term -> Prop :=
 | subeq_refl t : subterm_eq t t
 | subeq_sub u v : subterm u v -> subterm_eq u v
@@ -46,6 +48,8 @@ Proof.
     + eapply sub_refl, subeq_sub, subterm_trans'; eassumption.
     + eapply sub_J_l, subeq_sub, subterm_trans'; eassumption.
     + eapply sub_J_r, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_tp_l, subeq_sub, subterm_trans'; eassumption.
+    + eapply sub_tp_r, subeq_sub, subterm_trans'; eassumption.
   - intros uv vw.
     destruct vw.
     + assumption.

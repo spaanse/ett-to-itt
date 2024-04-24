@@ -34,6 +34,8 @@ Inductive red1 : term -> term -> Prop :=
 | red1_refl_cong u u'     : u ▷ u' -> Refl(u) ▷ Refl(u')
 | red1_J_cong_l t t' p    : t ▷ t' -> J(t,p) ▷ J(t',p)
 | red1_J_cong_r t p p'    : p ▷ p' -> J(t,p) ▷ J(t,p')
+| red1_tp_cong_l p p' t   : p ▷ p' -> tTransport p t ▷ tTransport p' t 
+| red1_tp_cong_r p t t'   : t ▷ t' -> tTransport p t ▷ tTransport p t' 
 where "a '▷' b" := (red1 a b) : r_scope.
 
 Inductive red : term -> term -> Prop :=
@@ -66,6 +68,7 @@ Inductive parred : term -> term -> Prop :=
 | parred_eq u u' v v'       : u ⇒ u' -> v ⇒ v' -> (u == v) ⇒ (u' == v')
 | parred_refl u u'          : u ⇒ u' -> Refl(u) ⇒ Refl(u')
 | parred_J t t' p p'        : t ⇒ t' -> p ⇒ p' -> J(t,p) ⇒ J(t',p')
+| parred_tp p p' t t'        : p ⇒ p' -> t ⇒ t' -> tTransport p t ⇒ tTransport p' t'
 where "a '⇒' b" := (parred a b) : r_scope.
 
 Fixpoint parred_nf (t : term) : term :=
@@ -95,6 +98,7 @@ match t with
 | Refl(u)       => Refl(parred_nf u)
 | J(t, Refl(x)) => (parred_nf t)[parred_nf x]
 | J(t, p)       => J(parred_nf t, parred_nf p)
+| tTransport p t => tTransport (parred_nf p) (parred_nf t)
 end.
 
 End Conversion.
@@ -194,6 +198,27 @@ Proof.
   induction pp'; eauto using red, red1.
 Qed.
 
+Lemma red_tp_cong p p' t t' (pp' : p ▸ p') (tt' : t ▸ t')
+: tTransport p t ▸ tTransport p' t'.
+Proof.
+  induction pp'; eauto using red, red1.
+  induction tt'; eauto using red, red1.
+Qed.
+
+Create HintDb red_cong.
+#[export] Hint Resolve red_prod_cong : red_cong.
+#[export] Hint Resolve red_lambda_cong : red_cong.
+#[export] Hint Resolve red_app_cong : red_cong.
+#[export] Hint Resolve red_sum_cong : red_cong.
+#[export] Hint Resolve red_pair_cong : red_cong.
+#[export] Hint Resolve red_pi1_cong : red_cong.
+#[export] Hint Resolve red_pi2_cong : red_cong.
+#[export] Hint Resolve red_eq_cong : red_cong.
+#[export] Hint Resolve red_refl_cong : red_cong.
+#[export] Hint Resolve red_J_cong : red_cong.
+#[export] Hint Resolve red_tp_cong : red_cong.
+
+
 Lemma red_trans {u v w : term} (uv : u ▸ v) (vw : v ▸ w)
 : u ▸ w.
 Proof.
@@ -212,32 +237,19 @@ Lemma subst_red (u u' v v' : term) (uu' : u ▸ u') (vv' : v ▸ v') (n : nat)
 : v[n ← u] ▸ v'[n ← u'].
 Proof.
   revert n u u' uu'. induction vv'; intros n x x' xx'.
-  - revert n x x' xx'. induction u; intros m x x' xx'; simpl in *.
-    + comp_cases; eauto using red.
-      apply lift_red. assumption.
-    + apply red_refl.
-    + apply red_prod_cong; eauto.
-    + apply red_lambda_cong; eauto.
-    + apply red_app_cong; eauto.
-    + apply red_sum_cong; eauto.
-    + apply red_pair_cong; eauto.
-    + apply red_pi1_cong; eauto.
-    + apply red_pi2_cong; eauto.
-    + apply red_eq_cong; eauto.
-    + apply red_refl_cong; eauto.
-    + apply red_J_cong; eauto.
+  - revert n x x' xx'. induction u; intros m x x' xx'; simpl in *;
+    eauto using red with red_cong.
+    comp_cases; eauto using red.
+    apply lift_red. assumption.
   - eapply red_trans; [|apply IHvv'; eassumption].
     clear IHvv' x' xx' vv'.
-    revert n. induction H; intros n; simpl in *.
+    revert n. induction H; intros n; simpl in *;
+    eauto using red, red1 with red_cong.
     + eapply red_red1. apply red1_beta_app.
       replace (S n) with (S n + 0) by lia.
       replace n with (n + 0) by lia.
       rewrite subst_subst.
       replace (n + 0 + 0) with (n + 0) by lia.
-      apply red_refl.
-    + eapply red_red1. apply red1_beta_pi1.
-      apply red_refl.
-    + eapply red_red1. apply red1_beta_pi2.
       apply red_refl.
     + eapply red_red1. apply red1_beta_J.
       replace (S n) with (S n + 0) by lia.
@@ -250,23 +262,6 @@ Proof.
       replace n with (n + 0) by lia.
       rewrite lift_subst'.
       f_equal. lia.
-    + eapply red_red1. apply red1_eta_pair. apply red_refl.
-    + apply red_prod_cong; eauto using red.
-    + apply red_prod_cong; eauto using red.
-    + apply red_lambda_cong; eauto using red.
-    + apply red_app_cong; eauto using red.
-    + apply red_app_cong; eauto using red.
-    + apply red_sum_cong; eauto using red.
-    + apply red_sum_cong; eauto using red.
-    + apply red_pair_cong; eauto using red.
-    + apply red_pair_cong; eauto using red.
-    + apply red_pi1_cong; eauto using red.
-    + apply red_pi2_cong; eauto using red.
-    + apply red_eq_cong; eauto using red.
-    + apply red_eq_cong; eauto using red.
-    + apply red_refl_cong; eauto using red.
-    + apply red_J_cong; eauto using red.
-    + apply red_J_cong; eauto using red.
 Qed.
 
 Lemma lift_parred (u v : term) (n k : nat)
@@ -547,21 +542,11 @@ Lemma parred_red u v
 : u ⇒ v -> u ▸ v.
 Proof.
   intro uv.
-  induction uv; eauto using red, red1.
+  induction uv; eauto using red, red1 with red_cong.
   - eapply red_red1. apply red1_beta_app.
     apply subst_red; assumption.
   - eapply red_red1. apply red1_beta_J.
     apply subst_red; assumption.
-  - apply red_prod_cong; assumption.
-  - apply red_lambda_cong; assumption.
-  - apply red_app_cong; assumption.
-  - apply red_sum_cong; assumption.
-  - apply red_pair_cong; assumption.
-  - apply red_pi1_cong; assumption.
-  - apply red_pi2_cong; assumption.
-  - apply red_eq_cong; assumption.
-  - apply red_refl_cong; assumption.
-  - apply red_J_cong; assumption.
 Qed.
 
 Lemma red1_wcr { u v w : term} (uv : u ▷ v) (uw : u ▷ w)

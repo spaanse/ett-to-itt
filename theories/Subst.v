@@ -35,6 +35,8 @@ match t with
 | u == v => (update_rel f u) == (update_rel f v)
 | Refl(u) => Refl(update_rel f u)
 | J(t, p) => J(update_rel (skip f 1) t, update_rel f p)
+
+| tTransport p t => tTransport (update_rel f p) (update_rel f t)
 end.
 
 Definition lift n k t := (update_rel (skip (jump n) k) t).
@@ -159,6 +161,8 @@ match u with
   | u == v => u[k ← t] == v[k ← t]
   | Refl(u) => Refl(u[k← t])
   | J(u, p) => J(u[S k ← t], p[k ← t])
+
+  | tTransport p u => tTransport p[k ← t] u[k ← t]
 end
 where "t [ n ← u ]" := (subst u n t).
 Notation "t [ u ]" := (subst u 0 t).
@@ -292,57 +296,15 @@ Lemma lift_subst (u v : term) (n k i : nat)
 : lift n (k + i) (v[i ← u]) = (lift n (S k + i) v)[i ← lift n k u].
 Proof.
   revert n k i; induction v; intros m k i;
-  unfold lift, subst; simpl; subst_helper; fold subst.
-  - unfold skip, jump; comp_cases.
-    + unfold lift.
-      rewrite update_rel_comp, update_rel_comp.
-      f_equal. apply functional_extensionality. intro x.
-      unfold skip, jump. comp_cases.
-    + unfold lift. simpl. f_equal.
-      unfold skip, jump. comp_cases.
-    + unfold lift. simpl. f_equal.
-      unfold skip, jump. comp_cases.
-    + unfold lift. simpl. f_equal.
-      unfold skip, jump. comp_cases.
-  - reflexivity.
-  - f_equal.
-    + apply IHv1.
-    + replace (S (k + i) + 1) with (S k + S i) by lia.
-      replace (k + i + 1) with (k + S i) by lia.
-      apply IHv2.
-  - f_equal.
-    replace (S (k + i) + 1) with (S k + S i) by lia.
-    replace (k + i + 1) with (k + S i) by lia.
-    apply IHv.
-  - f_equal.
-    + apply IHv1.
-    + replace (S (k + i) + 1) with (S k + S i) by lia.
-      replace (k + i + 1) with (k + S i) by lia.
-      apply IHv2.
-  - f_equal.
-    + apply IHv1.
-    + replace (S (k + i) + 1) with (S k + S i) by lia.
-      replace (k + i + 1) with (k + S i) by lia.
-      apply IHv2.
-  - f_equal.
-    + apply IHv1.
-    + apply IHv2.
-  - f_equal.
-    apply IHv.
-  - f_equal.
-    apply IHv.
-  - f_equal.
-    + apply IHv1.
-    + replace (S (k + i) + 1) with (S k + S i) by lia.
-      replace (k + i + 1) with (k + S i) by lia.
-      apply IHv2.
-  - f_equal.
-    apply IHv.
-  - f_equal.
-    + replace (S (k + i) + 1) with (S k + S i) by lia.
-      replace (k + i + 1) with (k + S i) by lia.
-      apply IHv1.
-    + apply IHv2.
+  unfold lift, subst; simpl; subst_helper; fold subst;
+  [ | (f_equal; eauto) .. ];
+  try replace (S (k + i) + 1) with (S k + S i) by lia;
+  try replace (k + i + 1) with (k + S i) by lia; eauto.
+  unfold lift, skip, jump; comp_cases;
+  [ repeat rewrite update_rel_comp | .. ];
+  simpl; f_equal; comp_cases.
+  apply functional_extensionality. intro x.
+  comp_cases.
 Qed.
 
 Lemma lift_subst' (u v : term) (n k i : nat)
