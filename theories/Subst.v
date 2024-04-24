@@ -354,6 +354,25 @@ Proof.
     rewrite IHt1. f_equal. lia.
 Qed.
 
+Lemma lift_subst_rel (v : term) (i : nat)
+: (lift 1 (S i) v) [i ← ^0] = v.
+Proof.
+  revert i. induction v; intros i; simpl; subst_helper;
+  replace (S i + 1) with (S (S i)) by lia;
+  try f_equal; eauto.
+  unfold skip, jump. comp_cases.
+  - subst. unfold lift, skip, jump. simpl. f_equal. lia.
+  - f_equal. lia.
+Qed.
+
+Lemma lift_subst_rel0 (v : term) (k : nat)
+: (lift 1 1 v)[0 ← ^0] = v.
+Proof.
+  replace k with (k + 0) by lia.
+  replace ^(k+0) with ^k by (f_equal; lia).
+  apply lift_subst_rel.
+Qed.
+
 Lemma lift_injective (u v : term) (n k : nat)
 : lift n k u = lift n k v -> u = v.
 Proof.

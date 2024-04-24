@@ -394,56 +394,145 @@ Proof.
   | H : ?f _ _ _ = ?f _ _ _ |- _ => progress injection H as H
   | H : lift ?n ?k ?v = lift ?n ?k ?w |- _ => apply lift_injective in H
   | |- exists x, ?u ▸ x /\ ?u ▸ x => ( exists u; split; apply red_refl )
-  | H : forall u, subterm u ?t -> forall v w, u ▷ v -> u ▷ w -> exists x, v ▸ x /\ w ▸ x,
-    uv : ?u ▷ ?v, uw : ?u ▷ ?w |- _ => try (
-      let ut := fresh "ut" in
-      assert (ut : subterm u t) by subterm_solve ;
-      destruct (H u ut v w uv uw)
-    )
   end.
   
   - assert (s_u1 : subterm u1 (∏u1, u2)) by subterm_solve.
     destruct (H _ s_u1 _ _ H3 H7) as [u [A'u  A'0u]].
     exists (∏u, u2).
     split; apply red_prod_cong; eauto using red.
-  - exists (∏A', B').
-    split; apply red_prod_cong; eauto using red.
-  - exists (∏A', B').
-    split; apply red_prod_cong; eauto using red.
+  - exists (∏A', B'). split; apply red_prod_cong; eauto using red.
+  - exists (∏A', B'). split; apply red_prod_cong; eauto using red.
   - assert (s_u2 : subterm u2 (∏u1, u2)) by subterm_solve.
     destruct (H _ s_u2 _ _ H3 H7) as [u [B'u  B'0u]].
     exists (∏u1, u).
     split; apply red_prod_cong; eauto using red.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - injection H4 as <-.
-    exists w. split; eauto using red.
-  - 
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-
-
-Qed.
+  - inversion H3; subst.
+    + unfold lift in H1. destruct v; simpl in H1; try discriminate H1.
+      injection H1 as H1. subst. subst_helper. replace (0 + 1) with 1 in * by lia.
+      replace ((lift 1 1 v) [^0]) with v.
+      exists (λ, v); eauto using red.
+      rewrite lift_subst_rel0. reflexivity. exact 0.
+    + admit.
+    + inversion H4.
+  - inversion H1; subst.
+    + unfold lift in H2. destruct w; try discriminate; simpl in H2.
+      injection H2 as H2. subst. subst_helper. replace (0 + 1) with 1 in * by lia.
+      replace ((lift 1 1 w) [^0]) with w.
+      exists (λ, w); eauto using red.
+      rewrite lift_subst_rel0. reflexivity. exact 0.
+    + admit.
+    + inversion H4.
+  - assert (s_u : subterm u (λ, u)) by subterm_solve.
+    destruct (H u s_u _ _ H1 H4) as [x [t'x t'0x]].
+    exists (λ, x). split; apply red_lambda_cong; assumption.
+  - inversion H6; subst.
+    + simpl. rewrite lift0k.
+      replace (lift 1 0 u') [u2] with u'.
+      exists (u' @ u2). eauto using red, red1.
+      rewrite subst_lift by lia. rewrite lift0k. reflexivity.
+    + exists t'[u2]. split.
+      * apply subst_red; eauto using red.
+      * eauto using red, red1.
+  - exists t [v']. split.
+    + apply subst_red; eauto using red.
+    + eapply red_red1. apply red1_beta_app. apply red_refl.
+  - inversion H3; subst.
+    + admit.
+    + exists t' [u2]; split; eauto using red, red1.
+      apply subst_red; eauto using red.
+  - assert (s_u1 : subterm u1 (u1 @ u2)) by subterm_solve.
+    destruct (H u1 s_u1 _ _ H3 H7) as [u [u'u u'0u]].
+    exists (u @ u2); split; apply red_app_cong; eauto using red.
+  - exists (u' @ v'); split; apply red_app_cong; eauto using red.
+  - exists (t[v']). split; eauto using red, red1, subst_red.
+  - exists (u' @ v'); split; apply red_app_cong; eauto using red.
+  - assert (s_u2 : subterm u2 (u1 @ u2)) by subterm_solve.
+    destruct (H u2 s_u2 _ _ H3 H7) as [u [u'u u'0u]].
+    exists (u1 @ u); split; apply red_app_cong; eauto using red.
+  - assert (s_u1 : subterm u1 (∑u1, u2)) by subterm_solve.
+    destruct (H u1 s_u1 _ _ H3 H7) as [u [u'u u'0u]].
+    exists (∑u, u2); split; apply red_sum_cong; eauto using red.
+  - exists (∑A', B'). split; apply red_sum_cong; eauto using red.
+  - exists (∑A', B'). split; apply red_sum_cong; eauto using red.
+  - assert (s_u2 : subterm u2 (∑u1, u2)) by subterm_solve.
+    destruct (H u2 s_u2 _ _ H3 H7) as [u [u'u u'0u]].
+    exists (∑u1, u); split; apply red_sum_cong; eauto using red.
+  - inversion H6; subst.
+    + exists (⟨u', v0⟩). eauto using red, red1.
+    + exists p'. eauto 10 using red, red1.
+  - inversion H6; subst.
+    + exists (⟨u, v'⟩). eauto using red, red1.
+    + exists p'. eauto 10 using red, red1.
+  - inversion H3; subst.
+    + exists (⟨u', v⟩). eauto using red, red1.
+    + exists p'. eauto 10 using red, red1.
+  - assert (s_u1 : subterm u1 ⟨u1, u2⟩) by subterm_solve.
+    destruct (H u1 s_u1 _ _ H3 H7) as [u [u'u u'0u]].
+    exists (⟨u, u2⟩). split; apply red_pair_cong; eauto using red.
+  - exists (⟨u', v'⟩). eauto 10 using red, red1.
+  - inversion H3; subst.
+    + exists (⟨u, v'⟩). eauto using red, red1.
+    + exists p'. eauto 10 using red, red1.
+  - exists (⟨u', v'⟩). eauto 10 using red, red1.
+  - assert (s_u2 : subterm u2 ⟨u1, u2⟩) by subterm_solve.
+    destruct (H u2 s_u2 _ _ H3 H7) as [v [v'v v'0v]].
+    exists (⟨u1, v⟩). split; apply red_pair_cong; eauto using red.
+  - inversion H3; subst.
+    + exists (π₁ p'). eauto using red.
+    + exists u'. eauto using red, red1.
+    + exists v. eauto using red, red1.
+  - inversion H1; subst.
+    + exists (π₁ p'). eauto using red.
+    + exists u'. eauto using red, red1.
+    + exists w. eauto using red, red1.
+  - assert (s_u : subterm u (π₁ u)) by subterm_solve.
+    destruct (H u s_u _ _ H1 H4) as [x [p'x p'0x]].
+    exists (π₁ x). split; apply red_pi1_cong; assumption.
+  - inversion H3; subst.
+    + exists (π₂ p'). eauto using red.
+    + exists v. eauto using red, red1.
+    + exists v'. eauto using red, red1.
+  - inversion H1; subst.
+    + exists (π₂ p'). eauto using red.
+    + exists w. eauto using red, red1.
+    + exists v'. eauto using red, red1.
+  - assert (s_u : subterm u (π₂ u)) by subterm_solve.
+    destruct (H u s_u _ _ H1 H4) as [x [p'x p'0x]].
+    exists (π₂ x). split; apply red_pi2_cong; assumption.
+  - assert (s_u1 : subterm u1 (u1 == u2)) by subterm_solve.
+    destruct (H u1 s_u1 _ _ H3 H7) as [x [u'x u'0x]].
+    exists (x == u2). split; apply red_eq_cong; eauto using red.
+  - exists (u' == v'). split; apply red_eq_cong; eauto using red.
+  - exists (u' == v'). split; apply red_eq_cong; eauto using red.
+  - assert (s_u2 : subterm u2 (u1 == u2)) by subterm_solve.
+    destruct (H u2 s_u2 _ _ H3 H7) as [x [v'x v'0x]].
+    exists (u1 == x). split; apply red_eq_cong; eauto using red.
+  - assert (s_u : subterm u Refl(u)) by subterm_solve.
+    destruct (H _ s_u _ _ H1 H4) as [x [u'x u'0x]].
+    exists (Refl(x)). split; apply red_refl_cong; assumption.
+  - exists (t'[x]). eauto using red, red1, subst_red.
+  - inversion H6. subst.
+    exists (u1 [u']). eauto using red, red1, subst_red.
+  - exists (t'[x]). eauto using red, red1, subst_red.
+  - assert (s_u1 : subterm u1 J(u1, u2)) by subterm_solve.
+    destruct (H _ s_u1 _ _ H3 H7) as [x [t'x t'0x]].
+    exists (J(x, u2)). eauto using red, red1, red_J_cong.
+  - exists (J(t', p')). split; apply red_J_cong; eauto using red.
+  - inversion H3. subst.
+    exists (u1 [u']). eauto using red, red1, subst_red.
+  - exists (J(t', p')). split; apply red_J_cong; eauto using red.
+  - assert (s_u2 : subterm u2 J(u1, u2)) by subterm_solve.
+    destruct (H _ s_u2 _ _ H3 H7) as [x [p'x p'0x]].
+    exists (J(u1, x)). eauto using red, red1, red_J_cong.
+  - assert (s_u1 : subterm u1 (tTransport u1 u2)) by subterm_solve.
+    destruct (H _ s_u1 _ _ H3 H7) as [x [p'x p'0x]].
+    exists (tTransport x u2). eauto using red, red1, red_tp_cong.
+  - exists (tTransport p' t'). split; apply red_tp_cong; eauto using red.
+  - exists (tTransport p' t'). split; apply red_tp_cong; eauto using red.
+  - assert (s_u2 : subterm u2 (tTransport u1 u2)) by subterm_solve.
+    destruct (H _ s_u2 _ _ H3 H7) as [x [t'x t'0x]].
+    exists (tTransport u1 x). eauto using red, red1, red_tp_cong.
+Admitted.
 
 (* Lemma red_nf_wcr (u : term)
 : forall v : term, u ⇒ v -> v ▸ (parred_nf u).
