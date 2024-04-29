@@ -77,4 +77,63 @@ Proof.
   all: eauto using subeq_sub, subterm_trans'.
 Qed.
 
+Lemma subterm_IH (P : term -> Prop) u v :
+  (forall w, subterm w u -> P w) ->
+  (subterm v u) ->
+  (forall w, subterm w v -> P w).
+Proof.
+  intros H vu w wv.
+  apply H. eapply subterm_trans; eassumption.
+Qed.
+
 Ltac subterm_solve := eauto using subterm, subterm_eq.
+Ltac subterm_IH_specialize u v IH := 
+  assert (st : subterm u v) by subterm_solve;
+  let new1 := fresh "IH" in pose proof (new1 := IH _ st);
+  let new2 := fresh "IH" in pose proof (new2 := subterm_IH _ _ _ IH st);
+  clear st.
+Ltac subterm_IH_split :=
+repeat match goal with
+| IH : forall x, subterm x ^?n -> _ |- _ => clear IH
+| IH : forall x, subterm x *?s -> _ |- _ => clear IH
+| IH : forall x, subterm x (∏?A, ?B) -> _ |- _ =>
+    subterm_IH_specialize A (∏A, B) IH;
+    subterm_IH_specialize B (∏A, B) IH;
+    clear IH
+| IH : forall x, subterm x (λ, ?t) -> _ |- _ =>
+    subterm_IH_specialize t (λ, t) IH;
+    clear IH
+| IH : forall x, subterm x (?u @ ?v) -> _ |- _ =>
+    subterm_IH_specialize u (u @ v) IH;
+    subterm_IH_specialize v (u @ v) IH;
+    clear IH
+| IH : forall x, subterm x (∑?A, ?B) -> _ |- _ =>
+    subterm_IH_specialize A (∑A, B) IH;
+    subterm_IH_specialize B (∑A, B) IH;
+    clear IH
+| IH : forall x, subterm x (⟨?u, ?v⟩) -> _ |- _ =>
+    subterm_IH_specialize u (⟨u, v⟩) IH;
+    subterm_IH_specialize v (⟨u, v⟩) IH;
+    clear IH
+| IH : forall x, subterm x (π₁ ?p) -> _ |- _ =>
+    subterm_IH_specialize p (π₁ p) IH;
+    clear IH
+| IH : forall x, subterm x (π₂ ?p) -> _ |- _ =>
+    subterm_IH_specialize p (π₂ p) IH;
+    clear IH
+| IH : forall x, subterm x (?u == ?v) -> _ |- _ =>
+    subterm_IH_specialize u (u == v) IH;
+    subterm_IH_specialize v (u == v) IH;
+    clear IH
+| IH : forall x, subterm x (Refl(?u)) -> _ |- _ =>
+    subterm_IH_specialize u (Refl(u)) IH;
+    clear IH
+| IH : forall x, subterm x (J(?t, ?p)) -> _ |- _ =>
+    subterm_IH_specialize t (J(t, p)) IH;
+    subterm_IH_specialize p (J(t, p)) IH;
+    clear IH
+| IH : forall x, subterm x (tTransport ?t ?p) -> _ |- _ =>
+    subterm_IH_specialize t (tTransport t p) IH;
+    subterm_IH_specialize p (tTransport t p) IH;
+    clear IH
+end.

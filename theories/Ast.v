@@ -42,6 +42,7 @@ Notation "'π₂' x" := (tPi2 x) (at level 9, right associativity, format "'π�
 Notation "u == v" := (tEq u v) (at level 9, right associativity, format "u '==' v") : t_scope.
 Notation "Refl( u )" := (tRefl u) (at level 9, right associativity, format "'Refl(' u ')'") : t_scope.
 Notation "J( t , p )" := (tJ t p) (at level 9, right associativity, format "'J(' t ',' p ')'") : t_scope.
+
 Notation "x [ T ≅ U ] y" := (∑ (T = U), tTransport ^0 x == y) (at level 12, only parsing) : t_scope.
 Notation "Pack( A , B )" := (∑ A, ∑ B, ^1 [A≅B] ^0) (at level 12, only parsing) : t_scope.
 Notation "Proj₁( p )" := (π₁ p) (at level 12, only parsing) : t_scope.

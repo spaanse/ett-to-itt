@@ -9,5 +9,7 @@ theories/ETT.v
 theories/Subterm.v
 theories/Conversion.v
 theories/ITT.v
+theories/Decorates.v
+theories/FundamentalLemma.v
 # theories/SigmaAssoc.v
-theories/ETTTypingLemma.v
+# theories/ETTTypingLemma.v

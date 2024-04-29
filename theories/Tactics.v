@@ -9,6 +9,8 @@ Ltac comp_cases :=
   | |- context [?lhs <? ?rhs] => destruct (lhs <? rhs) eqn:?
   | |- context [?lhs <=? ?rhs] => destruct (lhs <=? rhs) eqn:?
   | |- context [?lhs ?= ?rhs] => destruct (lhs ?= rhs) eqn:?
+  | |- context [Nat.ltb ?lhs ?rhs] => destruct (Nat.ltb ?lhs ?rhs) eqn:?
+  | |- context [Nat.leb ?lhs ?rhs] => destruct (Nat.leb ?lhs ?rhs) eqn:?
   | H : (_ =? _) = true |- _ => apply Nat.eqb_eq in H
   | H : (_ =? _) = false |- _ => apply Nat.eqb_neq in H
   | H : (_ <? _) = true |- _ => apply Nat.ltb_lt in H
