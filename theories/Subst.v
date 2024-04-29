@@ -1,12 +1,12 @@
 From Coq Require Import Nat Lia List Arith.PeanoNat Logic.FunctionalExtensionality.
 Require Import Ast Tactics.
 Open Scope t_scope.
-Declare Scope subst_scope.
 Reserved Notation "t [ u ]" (at level 7, left associativity).
 Reserved Notation "t [ u1 , u2 , .. , un ]" (at level 7, left associativity).
 Reserved Notation "t [ n ← u ]" (at level 7, left associativity).
 
 Section Subst.
+Declare Scope subst_scope.
 Open Scope subst_scope.
 
 Definition id : nat -> nat :=
@@ -164,9 +164,10 @@ match u with
 
   | tTransport p u => tTransport p[k ← t] u[k ← t]
 end
-where "t [ n ← u ]" := (subst u n t).
-Notation "t [ u ]" := (subst u 0 t).
-Notation "t [ u1 , u2 , .. , un ]" := (subst u1 0 (subst u2 0 .. (subst un 0 t) .. )).
+where "t [ n ← u ]" := (subst u n t) : subst_scope.
+Notation "t [ n ← u ]" := (subst u n t) : subst_scope.
+Notation "t [ u ]" := (subst u 0 t) : subst_scope.
+Notation "t [ u1 , u2 , .. , un ]" := (subst u1 0 (subst u2 0 .. (subst un 0 t) .. )) : subst_scope.
 
 
 Lemma unlift_lift (n k : nat) (t : term) : unlift n k (lift n k t) = t.
@@ -248,10 +249,12 @@ Proof.
   unfold skip, jump. comp_cases.
 Qed.
 End Subst.
+
+Declare Scope subst_scope.
 Open Scope subst_scope.
-Notation "t [ n ← u ]" := (subst u n t).
-Notation "t [ u ]" := (subst u 0 t).
-Notation "t [ u1 , u2 , .. , un ]" := (subst u1 0 (subst u2 0 .. (subst un 0 t) .. )).
+Notation "t [ n ← u ]" := (subst u n t) : subst_scope.
+Notation "t [ u ]" := (subst u 0 t) : subst_scope.
+Notation "t [ u1 , u2 , .. , un ]" := (subst u1 0 (subst u2 0 .. (subst un 0 t) .. )) : subst_scope.
 
 Ltac subst_helper :=
 repeat match goal with
