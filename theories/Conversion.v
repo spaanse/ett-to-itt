@@ -56,8 +56,8 @@ Inductive parred : term -> term -> Prop :=
 | parred_beta_pi1 u u' v v' : u ⇒ u' -> v ⇒ v' -> π₁ ⟨u, v⟩ ⇒ u'
 | parred_beta_pi2 u u' v v' : u ⇒ u' -> v ⇒ v' -> π₂ ⟨u, v⟩ ⇒ v'
 | parred_beta_J t t' x x'   : t ⇒ t' -> x ⇒ x' -> J(t, Refl(x)) ⇒ t'[x']
-| parred_eta_lambda f f'    : f ⇒ lift 1 0 f' -> (λ, f @ ^0) ⇒ f'
-| parred_eta_pair u v p     : u ⇒ π₁ p -> v ⇒ π₂ p -> ⟨u, v⟩ ⇒ p
+| parred_eta_lambda f f'    : f ⇒ f' -> (λ, lift 1 0 f @ ^0) ⇒ f'
+| parred_eta_pair u v p     : u ⇒ p -> v ⇒ p -> ⟨π₁ u, π₂ v⟩ ⇒ p
 | parred_prod A A' B B'     : A ⇒ A' -> B ⇒ B' -> ∏ A, B ⇒ ∏ A', B'
 | parred_lambda t t'        : t ⇒ t' -> λ, t ⇒ λ, t'
 | parred_app u u' v v'      : u ⇒ u' -> v ⇒ v' -> u @ v ⇒ u' @ v'
@@ -307,9 +307,8 @@ Proof.
     replace (S m) with (S m + 0) by lia.
     rewrite subst_subst.
     f_equal. lia.
-  - apply parred_eta_lambda.
-    replace (lift 1 0 f'[m←y']) with ((lift 1 0 f')[S m ← y']).
-    apply IHvv'. assumption.
+  - replace ((lift 1 0 f)[S m ← y]) with (lift 1 0 f[m ← y]).
+    { apply parred_eta_lambda, IHvv'. assumption. }
     replace m with (m + 0) by lia.
     rewrite lift_subst'. f_equal. lia.
 Qed.
@@ -599,9 +598,9 @@ Proof.
     apply subst_red; assumption.
   - eapply red_red1. apply red1_beta_J.
     apply subst_red; assumption.
-  - admit.
-  - admit.
-Admitted.
+  - eapply red_trans. 2: { eapply red_red1. apply red1_eta_pair. apply red_refl. }
+    eauto with red_cong.
+Qed.
 
 Lemma lift_parred_lift (v w : term) (n k : nat)
 : (lift n k v) ⇒ w -> exists w', w = lift n k w'.
@@ -632,19 +631,15 @@ Proof.
   - admit.
   - admit.
   -
-  destruct w; simpl in *; try discriminate;
+  (* destruct w; simpl in *; try discriminate;
   eauto using parred.
   - injection H as H.
     unfold skip, jump in *;
     destruct (n <? k) eqn: eq1;
     destruct (n1 <? k) eqn: eq2;
     comp_cases; replace n1 with n by lia; eauto using parred.
-  - 
-
-
-
-  - 
-Qed.
+  *)
+Admitted.
 
 Lemma red_cr (u v w : term)
 : u ▷ v -> u ⇒ w -> exists x : term, v ⇒ x /\ w ⇒ x.
@@ -670,29 +665,57 @@ Proof.
   (* | H : ?u ▷ ?v |- _ => apply red1_parred in H *)
   end;
   eauto 10 using parred, parred_identity; simpl in *.
-  - exists w. split; eauto using parred, parred_identity.
-    
-  - inversion H3; subst.
-    + unfold lift in H1. destruct v; simpl in H1; try discriminate H1.
-      injection H1 as H1. subst. subst_helper. replace (0 + 1) with 1 in * by lia.
-      replace ((lift 1 1 v) [^0]) with v.
-      exists (λ, v); eauto using red.
-      rewrite lift_subst_rel0. reflexivity. exact 0.
-    + destruct (lift_red1_lift _ _ _ H4) as [x ->].
-      exists x. split; eauto using red, red1.
-      eauto using lift_red', red.
-    + inversion H4.
+  - inversion H3; inversion H4; subst.
+    + unfold lift in H. destruct v; simpl in H; try discriminate H.
+      injection H as H. subst. subst_helper. replace (0 + 1) with 1 in * by lia.
+      destruct (lift_parred_lift _ _ _ _ H1) as [x ->].
+      exists (λ, x); split.
+      * apply lift_parred' in H1. eauto using parred.
+      * apply parred_lambda.
+        replace ((lift 1 1 x)[^0]) with x. { apply parred_identity. }
+        rewrite lift_subst_rel0; eauto. exact 0.
+    + destruct (lift_parred_lift _ _ _ _ H1) as [x ->].
+      exists x. split.
+      * apply lift_parred' in H1. assumption.
+      * apply parred_eta_lambda, parred_identity.
   - inversion H1; subst.
-    + unfold lift in H2. destruct w; try discriminate; simpl in H2.
-      injection H2 as H2. subst. subst_helper. replace (0 + 1) with 1 in * by lia.
-      replace ((lift 1 1 w) [^0]) with w.
-      exists (λ, w); eauto using red.
-      rewrite lift_subst_rel0. reflexivity. exact 0.
-    + destruct (lift_red1_lift _ _ _ H4) as [x ->].
-      exists x. split; eauto using red, red1.
-      eauto using lift_red', red.
-    + inversion H4.
-  - inversion H6; subst.
+    + unfold lift in H0. destruct f; try discriminate; simpl in H0.
+      injection H0 as H0. subst. subst_helper. replace (0 + 1) with 1 in * by lia.
+      replace ((lift 1 1 f)[^0]) with f. { eauto using parred, parred_identity. }
+      rewrite lift_subst_rel0; eauto. exact 0.
+    + admit.
+    + inversion H3.
+  - exists (t'[u']); split; apply subst_parred; eauto using parred_identity.
+  - inversion H5; subst.
+    + exists (u' @ v'). split.
+      * simpl. rewrite subst_lift by lia. rewrite lift0k. rewrite lift0k.
+        eauto using parred.
+      * apply parred_identity.
+    + exists (t'[v']). split; eauto using parred, subst_parred, parred_identity.
+  - inversion H3; subst.
+    + inversion H6; subst.
+      inversion H4; subst.
+      unfold lift in H. destruct u'; try discriminate; simpl in H;
+      injection H as H; subst; subst_helper; replace (0 + 1) with 1 in * by lia.
+      admit.
+      admit.
+    + admit.
+  - admit.
+  - inversion H5; inversion H7; subst.
+    + injection H3 as -> ->.
+      exists (⟨u', v'⟩). eauto using parred, parred_identity.
+    + inversion H4; subst.
+      * admit.
+      * exists (⟨u', v'⟩). eauto using parred, parred_identity.
+    + inversion H0; subst.
+      * admit.
+      * exists (⟨u', v'⟩). eauto using parred, parred_identity.
+    + admit.
+
+
+
+
+  (* - inversion H6; subst.
     + simpl. rewrite lift0k.
       replace (lift 1 0 u') [u2] with u'.
       eauto using red, red1.
@@ -713,21 +736,7 @@ Proof.
   - inversion H3; subst; eauto 10 using red, red1.
   - inversion H1; subst; eauto 10 using red, red1.
   - inversion H6. subst. eauto 10 using red, red1, subst_red.
-  - inversion H3. subst. eauto 10 using red, red1, subst_red.
-Qed.
-
-Lemma parred_pair_eta_expansion u v w
-: π₁ u ⇒ v -> π₂ u ⇒ w -> u ⇒ ⟨v, w⟩.
-Proof.
-  revert v w.
-  induction u using term_strong_ind;
-  intros v w uv uw;
-  inversion uv; inversion uw; subst.
-  - injection H4 as H4; subst. eauto using parred.
-  - inversion H5; subst. { eauto using parred. }
-    apply parred_pair; eauto using parred.
-    
-    
+  - inversion H3. subst. eauto 10 using red, red1, subst_red. *)
 Admitted.
 
 (* 
@@ -776,7 +785,7 @@ Then ⟨u', v'⟩ ⇒ p'' ⇐ p
 3 - assumes a ⇒ b and b ⇒ c imply a ⇒ c which (by design) is not true
 *)
 
-Lemma parred_unique_nf u
+(* Lemma parred_unique_nf u
 : exists w, forall v, u ⇒ v -> v ⇒ w.
 Proof.
   induction u using term_strong_ind.
@@ -826,7 +835,7 @@ Proof.
     + eauto using parred.
   - eauto using parred.
   - eauto using parred.
-Qed.
+Qed. *)
 
 Lemma parred_dp (u v w : term)
 : u ⇒ v -> u ⇒ w -> exists x, v ⇒ x /\ w ⇒ x.
@@ -876,12 +885,7 @@ Proof.
     + assert (IHt : exists z, t' ⇒ z /\ t'0 ⇒ z). { eapply H; try eassumption; subterm_solve. }
       destruct IHt as [? [? ?]].
       eauto using parred, subst_parred.
-  - inversion H7; inversion H9; subst.
-    + admit.
-    + admit.
-    + admit.
-    + admit.
-    assert (pi_uv : π₁ u ⇒ π₁ v). eauto using parred.
+  - assert (pi_uv : π₁ u ⇒ π₁ v). eauto using parred.
     assert (pi_v0v : π₂ v0 ⇒ π₂ v). eauto using parred.
     assert (IHu : exists y, u' ⇒ y /\ π₁ v ⇒ y). { eapply H; try eassumption; subterm_solve. }
     assert (IHv : exists y, v' ⇒ y /\ π₂ v ⇒ y). { eapply H; try eassumption; subterm_solve. }
