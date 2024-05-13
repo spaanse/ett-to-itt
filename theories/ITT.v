@@ -69,12 +69,12 @@ Inductive typed: context -> term -> term -> Prop :=
   Γ ⊢ᵢ Refl(u) : u == u
 
 | tyJ (Γ : context) (s : sort) (A C t p x y : term)
-: Γ ,, A ,, A ,, (^1 == ^0) ⊢ᵢ C : *s ->
-  Γ ,, A ⊢ᵢ t : (subst Refl(^0) 0 (subst ^0 0 (subst ^0 0 C))) ->
+: Γ ,, A ,, (lift 1 0 A) ,, (^1 == ^0) ⊢ᵢ C : *s ->
+  Γ ,, A ⊢ᵢ t : C[^0, Refl(^1)] ->
   Γ ⊢ᵢ x : A ->
   Γ ⊢ᵢ y : A ->
   Γ ⊢ᵢ p : x == y ->
-  Γ ⊢ᵢ J(t,p) : (subst p 0 (subst y 0 (subst x 0 C)))
+  Γ ⊢ᵢ J(t,p) : C[x, lift 1 0 y, lift 2 0 p]
   
 | tyConv (Γ : context) (A B t : term) (s : sort)
 : Γ ⊢ᵢ t : A ->
