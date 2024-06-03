@@ -1,4 +1,5 @@
-Require Import Ast.
+Require Import Lia.
+Require Import Ast Subst Tactics.
 Open Scope t_scope.
 
 Inductive subterm : term -> term -> Prop :=
@@ -76,6 +77,31 @@ Proof.
   all: subst; eauto.
   all: eauto using subeq_sub, subterm_trans'.
 Qed.
+(* 
+Notation clear_rel k := (update_rel (skip (fun _ => 0) k)).
+
+Lemma term_strong_ind' (P : term -> Prop) :
+  (forall t, (forall u k, subterm (clear_rel k u) (clear_rel k t) -> P u) -> P t) ->
+  (forall t, P t).
+Proof.
+  intros H t.
+  enough (H0 : forall u, (forall k, subterm_eq (clear_rel k u) (clear_rel k t)) -> P u).
+  { apply H0. intro k. apply subeq_refl. }
+  induction t; intros u ut.
+  { specialize (ut 0). inversion ut; subst.
+    - destruct u; try discriminate.
+      apply H. intros v k vt. inversion vt.
+    - inversion H0.
+  }{specialize (ut 0). inversion ut; subst.
+    - destruct u; try discriminate.
+      apply H. intros v k vt. inversion vt.
+    - inversion H0.
+  }
+  all: apply H; intros v vu.
+  all: inversion ut; subst; [inversion vu | inversion H0].
+  all: subst; eauto.
+  all: eauto using subeq_sub, subterm_trans'.
+Qed. *)
 
 Lemma subterm_IH (P : term -> Prop) u v :
   (forall w, subterm w u -> P w) ->

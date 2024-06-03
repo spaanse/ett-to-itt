@@ -141,7 +141,7 @@ with eq_typed : context -> term -> term -> term -> Prop :=
 : Γ ⊢ₓ A : *s1 ->
   Γ ,, A ⊢ₓ B : *s2 ->
   Γ ⊢ₓ f : ∏A, B ->
-  Γ ⊢ₓ λ, f @ ^0 ≡ f : (tProd A B)
+  Γ ⊢ₓ λ, (lift 1 0 f) @ ^0 ≡ f : (tProd A B)
 
 | eqPairEta (Γ : context) (s1 s2 : sort)  (A B p : term)
 : Γ ⊢ₓ A : *s1 ->

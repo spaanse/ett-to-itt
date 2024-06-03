@@ -39,8 +39,8 @@ match t with
 | tTransport p t => tTransport (update_rel f p) (update_rel f t)
 end.
 
-Definition lift n k t := (update_rel (skip (jump n) k) t).
-Definition unlift n k t := (update_rel (skip (unjump n) k) t).
+Notation lift n k t := (update_rel (skip (jump n) k) t).
+Notation unlift n k t := (update_rel (skip (unjump n) k) t).
 
 Lemma skip_0 (f : nat -> nat)
 : skip f 0 = f.
@@ -63,18 +63,17 @@ Qed.
 Lemma skip_id (k : nat)
 : skip id k = id.
 Proof.
-  unfold skip.
+  unfold skip, id.
   apply functional_extensionality. intro i.
   comp_cases.
-  unfold id. lia.
 Qed.
 
 Lemma jump_0
 : jump 0 = id.
 Proof.
-  unfold jump.
+  unfold jump, id.
   apply functional_extensionality. intro i.
-  unfold id. lia.
+  lia.
 Qed.
 
 Lemma jump_jump (n m : nat)
@@ -172,7 +171,6 @@ Notation "t [ u1 , u2 , .. , un ]" := (subst u1 0 (subst u2 0 .. (subst un 0 t) 
 
 Lemma unlift_lift (n k : nat) (t : term) : unlift n k (lift n k t) = t.
 Proof.
-  unfold unlift, lift.
   rewrite update_rel_comp'.
   rewrite unjump_jump, skip_id.
   apply update_rel_id.
@@ -181,7 +179,6 @@ Qed.
 Lemma lift0k (u : term) (k : nat)
 : lift 0 k u = u.
 Proof.
-  unfold lift.
   rewrite jump_0, skip_id.
   apply update_rel_id.
 Qed.
@@ -197,7 +194,6 @@ Qed.
 Lemma lift_add (u : term) (n m k : nat)
 : lift n k (lift m k u) = lift (n+m) k u.
 Proof.
-  unfold lift.
   rewrite update_rel_comp', jump_jump.
   reflexivity.
 Qed.
@@ -223,7 +219,7 @@ Lemma subst_lift (u v : term) (n k i : nat) (k_lt_i : k <= i) (i_le_nk : i <= n 
 : (lift (S n) k v)[i ← u] = lift n k v.
 Proof.
   revert k i k_lt_i i_le_nk. induction v; intros k i k_lt_i i_le_nk;
-  unfold lift, update_rel; fold update_rel; simpl; f_equal; eauto with arith.
+  simpl; f_equal; eauto with arith.
   - unfold skip, jump; comp_cases. f_equal. lia.
   - repeat rewrite skip_skip. apply IHv2; lia.
   - repeat rewrite skip_skip. apply IHv; lia.
@@ -234,7 +230,6 @@ Qed.
 Lemma lift_lift (u : term) (n m k i : nat) (k_le_m : k <= m)
 : lift n (i+k) (lift m i u) = lift n i (lift m i u).
 Proof.
-  unfold lift.
   repeat rewrite update_rel_comp. f_equal.
   apply functional_extensionality. intro x.
   unfold skip, jump. comp_cases.
@@ -243,7 +238,6 @@ Qed.
 Lemma lift_lift' (u : term) (n k : nat)
 : lift 1 0 (lift n k u) = lift n (k + 1) (lift 1 0 u).
 Proof.
-  unfold lift.
   repeat rewrite update_rel_comp. f_equal.
   apply functional_extensionality. intro x.
   unfold skip, jump. comp_cases.
@@ -255,16 +249,18 @@ Open Scope subst_scope.
 Notation "t [ n ← u ]" := (subst u n t) : subst_scope.
 Notation "t [ u ]" := (subst u 0 t) : subst_scope.
 Notation "t [ u1 , u2 , .. , un ]" := (subst u1 0 (subst u2 0 .. (subst un 0 t) .. )) : subst_scope.
+Notation lift n k t := (update_rel (skip (jump n) k) t).
+Notation unlift n k t := (update_rel (skip (unjump n) k) t).
 
 Ltac subst_helper :=
 repeat match goal with
 | _ => progress fold update_rel
 | |- context [ jump ?n (jump ?m ?i) ] => rewrite (jump_jump' n m)
 | |- context [ skip (skip ?f ?n) ?m ] => rewrite (skip_skip f n m)
-| |- context [ update_rel (skip (jump ?n) ?k) ] => replace (update_rel (skip (jump n) k)) with (lift n k) by reflexivity
+(* | |- context [ update_rel (skip (jump ?n) ?k) ] => replace (update_rel (skip (jump n) k)) with (lift n k) by reflexivity *)
 | H : context [ jump ?n (jump ?m ?i) ] |- _ => rewrite (jump_jump' n m) in H
 | H : context [ skip (skip ?f ?n) ?m ] |- _ => rewrite (skip_skip f n m) in H
-| H : context [ update_rel (skip (jump ?n) ?k) ] |- _ => replace (update_rel (skip (jump n) k)) with (lift n k) in H by reflexivity
+(* | H : context [ update_rel (skip (jump ?n) ?k) ] |- _ => replace (update_rel (skip (jump n) k)) with (lift n k) in H by reflexivity *)
 end.
 
 Inductive closed_above : nat -> term -> Prop :=
@@ -299,11 +295,11 @@ Lemma lift_subst (u v : term) (n k i : nat)
 : lift n (k + i) (v[i ← u]) = (lift n (S k + i) v)[i ← lift n k u].
 Proof.
   revert n k i; induction v; intros m k i;
-  unfold lift, subst; simpl; subst_helper; fold subst;
+  unfold subst; simpl; subst_helper; fold subst;
   [ | (f_equal; eauto) .. ];
   try replace (S (k + i) + 1) with (S k + S i) by lia;
   try replace (k + i + 1) with (k + S i) by lia; eauto.
-  unfold lift, skip, jump; comp_cases;
+  unfold skip, jump; comp_cases;
   [ repeat rewrite update_rel_comp | .. ];
   simpl; f_equal; comp_cases.
   apply functional_extensionality. intro x.
@@ -314,27 +310,21 @@ Lemma lift_subst' (u v : term) (n k i : nat)
 : lift k i v[n + i ← u] = (lift k i v)[n + k + i ← u].
 Proof.
   revert n k i. induction v; intros m k i; simpl;
-  unfold lift; simpl; subst_helper; [| |f_equal ..]; eauto.
-  - unfold skip, jump. comp_cases.
-    + unfold lift. simpl. f_equal.
-      unfold skip, jump. comp_cases.
-    + unfold lift. rewrite update_rel_comp. f_equal.
-      unfold skip, jump. apply functional_extensionality. intro x.
+  simpl; subst_helper; [| |f_equal ..]; eauto.
+  { unfold skip, jump. comp_cases.
+    + simpl. f_equal. comp_cases.
+    + rewrite update_rel_comp. f_equal.
+      apply functional_extensionality. intro x.
       comp_cases.
-    + unfold lift. simpl. f_equal. unfold skip, jump. comp_cases.
-    + unfold lift. simpl. f_equal. unfold skip, jump. comp_cases.
-  - replace (i + 1) with (S i) by lia.
-    replace (S (m + i)) with (m + S i) by lia.
-    rewrite IHv2. f_equal. lia.
-  - replace (i + 1) with (S i) by lia.
-    replace (S (m + i)) with (m + S i) by lia.
-    rewrite IHv. f_equal. lia.
-  - replace (i + 1) with (S i) by lia.
-    replace (S (m + i)) with (m + S i) by lia.
-    rewrite IHv2. f_equal. lia.
-  - replace (i + 1) with (S i) by lia.
-    replace (S (m + i)) with (m + S i) by lia.
-    rewrite IHv1. f_equal. lia.
+    + simpl. f_equal. comp_cases.
+    + simpl. f_equal. comp_cases.
+  }
+  all: replace (i + 1) with (S i) by lia.
+  all: replace (S (m + i)) with (m + S i) by lia.
+  - rewrite IHv2. f_equal. lia.
+  - rewrite IHv. f_equal. lia.
+  - rewrite IHv2. f_equal. lia.
+  - rewrite IHv1. f_equal. lia.
 Qed.
 
 Lemma subst_subst (u v t : term) (m k : nat)
@@ -342,19 +332,16 @@ Lemma subst_subst (u v t : term) (m k : nat)
 Proof.
   revert u m k; induction t; intros u m k;
   simpl; [comp_cases; simpl; comp_cases|f_equal ..]; eauto.
-  - rewrite subst_lift by lia.
-    reflexivity.
-  - replace m with (m + 0) by lia.
+  { rewrite subst_lift by lia.
+    reflexivity. }
+  { replace m with (m + 0) by lia.
     rewrite lift_subst'.
-    f_equal. lia.
-  - replace (S (S (m + k))) with (S m + S k) by lia.
-    rewrite IHt2. f_equal. lia.
-  - replace (S (S (m + k))) with (S m + S k) by lia.
-    rewrite IHt. f_equal. lia.
-  - replace (S (S (m + k))) with (S m + S k) by lia.
-    rewrite IHt2. f_equal. lia.
-  - replace (S (S (m + k))) with (S m + S k) by lia.
-    rewrite IHt1. f_equal. lia.
+    f_equal. lia. }
+  all: replace (S (S (m + k))) with (S m + S k) by lia.
+  - rewrite IHt2. f_equal. lia.
+  - rewrite IHt. f_equal. lia.
+  - rewrite IHt2. f_equal. lia.
+  - rewrite IHt1. f_equal. lia.
 Qed.
 
 Lemma lift_subst_rel (v : term) (i : nat)
@@ -363,9 +350,7 @@ Proof.
   revert i. induction v; intros i; simpl; subst_helper;
   replace (S i + 1) with (S (S i)) by lia;
   try f_equal; eauto.
-  unfold skip, jump. comp_cases.
-  - subst. unfold lift, skip, jump. simpl. f_equal. lia.
-  - f_equal. lia.
+  unfold skip, jump. comp_cases; f_equal; lia.
 Qed.
 
 Lemma lift_subst_rel0 (v : term) (k : nat)
@@ -381,7 +366,7 @@ Lemma lift_injective (u v : term) (n k : nat)
 Proof.
   revert v n k; induction u; intros v m k ulvl;
   destruct v; try discriminate ulvl;
-  unfold lift in ulvl; simpl in ulvl; subst_helper;
+  simpl in ulvl; subst_helper;
   try (injection ulvl; intros; f_equal; eauto).
   - injection ulvl as ulvl. unfold skip, jump in *.
     f_equal. revert ulvl. comp_cases.

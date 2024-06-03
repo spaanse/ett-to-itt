@@ -116,15 +116,15 @@ Lemma lift_red1 (u v : term) (uv : u ▷ v) (n k : nat)
 : lift n k u ▷ lift n k v.
 Proof.
   revert n k. induction uv; intros m k;
-  unfold lift; simpl; subst_helper; eauto using red1.
+  simpl; subst_helper; eauto using red1.
   - replace (lift m k t[u]) with (lift m (k+1) t)[lift m k u].
     apply red1_beta_app.
     replace k with (k + 0) by lia.
-    rewrite lift_subst. f_equal; f_equal; lia.
+    rewrite lift_subst. f_equal; f_equal; f_equal; lia.
   - replace (lift m k t[x]) with (lift m (k+1) t)[lift m k x].
     apply red1_beta_J.
     replace k with (k + 0) by lia.
-    rewrite lift_subst. f_equal; f_equal; lia.
+    rewrite lift_subst. f_equal; f_equal; f_equal; lia.
   - replace (skip (jump m) (k + 1) 0) with 0.
     replace (lift m (k + 1) (lift 1 0 f)) with (lift 1 0 (lift m k f)).
     apply red1_eta_lambda.
@@ -269,20 +269,20 @@ Lemma lift_parred (u v : term) (n k : nat)
 Proof.
   intros uv.
   revert n k. induction uv; intros m k;
-  unfold lift; simpl; subst_helper; eauto using parred.
+  simpl; subst_helper; eauto using parred.
   - replace (lift m k t'[u']) with (lift m (k+1) t')[lift m k u'].
     { apply parred_beta_app; eauto. }
     replace k with (k + 0) by lia.
-    rewrite lift_subst. f_equal; f_equal; lia.
-  (* - replace (lift m (k + 1) (lift 1 0 f)) with (lift 1 0 (lift m k f)) by apply lift_lift'.
-    replace (skip (jump m) (k + 1) 0) with 0 by (unfold skip, jump; comp_cases).
-    apply parred_eta_lambda. apply IHuv. *)
+    rewrite lift_subst. f_equal; f_equal; f_equal; lia.
   - replace (lift m k t'[x']) with (lift m (k+1) t')[lift m k x'].
     { apply parred_beta_J; eauto. }
     replace k with (k + 0) by lia.
-    rewrite lift_subst. f_equal; f_equal; lia.
-  - admit.
-Admitted.
+    rewrite lift_subst. f_equal; f_equal; f_equal; lia.
+  - rewrite <- lift_lift'.
+    replace (^(skip (jump m) (k + 1) 0)) with ^0.
+    2: { unfold skip, jump. comp_cases. }
+    apply parred_eta_lambda, IHuv.
+Qed.
 
 Lemma parred_identity u
 : u ⇒ u.
@@ -391,7 +391,7 @@ Proof.
   inversion vw.
   - destruct v; try discriminate.
     destruct v1; try discriminate.
-    unfold lift in H1. simpl in H1. subst_helper.
+    simpl in H1. subst_helper.
     injection H1 as H1. subst.
 Admitted.
 
@@ -401,7 +401,7 @@ Proof.
   revert w n k.
   induction v using term_strong_ind;
   intros w n k vw.
-  destruct v; unfold lift in vw; simpl in vw; subst_helper;
+  destruct v; simpl in vw; subst_helper;
   inversion vw; subst.
   - assert (s_v1 : subterm v1 (∏v1, v2)) by subterm_solve.
     destruct (H _ s_v1 _ _ _ H3) as [x v1x].
@@ -409,24 +409,22 @@ Proof.
   - assert (s_v2 : subterm v2 (∏v1, v2)) by subterm_solve.
     destruct (H _ s_v2 _ _ _ H3) as [x v2x].
     exists (∏v1, x). eauto using red1.
-  - destruct v; unfold lift in H1; simpl in H1; try discriminate H1; subst_helper.
+  - destruct v; simpl in H1; try discriminate H1; subst_helper.
     injection H1 as H1.
-    destruct v2; unfold lift in H0; simpl in H0; try discriminate H0; subst_helper.
+    destruct v2; simpl in H0; try discriminate H0; subst_helper.
     injection H0 as H0.
-    unfold skip, jump in H0.
-    destruct (Nat.ltb n0 (k + 1)); comp_cases. subst.
-    unfold lift in vw. simpl in vw. subst_helper. unfold skip, jump in vw.
-    replace (Nat.ltb 0 (k+1)) with true in vw.
-    2: { replace (k+1) with (S k) by lia. unfold Nat.ltb, Nat.leb. reflexivity. }
-
-    
+    unfold skip, jump in H0. destruct (n0 <? k + 1) eqn: eq in H0; comp_cases.
+    subst.
+    simpl in vw.
+    replace (^(skip (jump n) (k + 1) 0)) with ^0 in *.
+    2: { unfold skip, jump. comp_cases. }
 Admitted.
 
 Lemma lift_eq (v w : term) (k i : nat)
 : lift 1 i v = lift 1 (k + i + 1) w -> v = lift 1 (k + i) (unlift 1 (k + i) v).
 Proof.
   revert k i w; induction v; intros k i w vw;
-  unfold lift, unlift; simpl; subst_helper; f_equal;
+  simpl; subst_helper; f_equal;
   destruct w; try discriminate; injection vw as vw; eauto.
   - unfold skip, jump, unjump in *.
     destruct (n <? i) eqn: eq1;
@@ -457,22 +455,22 @@ Lemma lift_red1_lift (v w : term) (k : nat)
 : (lift 1 k v) ▷ w -> exists w', w = lift 1 k w'.
 Proof.
   revert k w. induction v;
-  unfold lift; simpl; intros k w vw; inversion vw; subst_helper; subst.
+  simpl; intros k w vw; inversion vw; subst_helper; subst.
   - destruct (IHv1 _ _ H2) as [x ->].
-    exists (∏x, v2). unfold lift. simpl. subst_helper. reflexivity.
+    exists (∏x, v2). simpl. subst_helper. reflexivity.
   - destruct (IHv2 _ _ H2) as [x ->].
-    exists (∏v1, x). unfold lift. simpl. subst_helper. reflexivity.
-  - destruct v; unfold lift in *; simpl in *; try discriminate; subst_helper.
+    exists (∏v1, x). simpl. subst_helper. reflexivity.
+  - destruct v; simpl in *; try discriminate; subst_helper.
     injection H0 as H0 H1.
     destruct v2; try discriminate.
-    unfold lift, skip, jump in H1. simpl in H1. injection H1 as H1.
+    unfold skip, jump in H1. simpl in H1. injection H1 as H1.
     destruct (Nat.ltb n (k+1)); try lia. subst; simpl in *.
     exists (unlift 1 k w).
     eapply lift_eq'. eassumption.
   - destruct (IHv _ _ H0) as [x ->].
-    exists (λ, x). unfold lift. simpl. subst_helper. reflexivity.
+    exists (λ, x). simpl. subst_helper. reflexivity.
   - destruct v1; try discriminate.
-    unfold lift in *; simpl in *; subst_helper.
+    simpl in *; subst_helper.
     injection H0 as H0. subst.
     replace (k + 1) with (S k + 0) by lia.
     rewrite <- lift_subst.
@@ -480,37 +478,37 @@ Proof.
   - destruct (IHv1 _ _ H2) as [x ->]. exists (x @ v2). eauto.
   - destruct (IHv2 _ _ H2) as [x ->]. exists (v1 @ x). eauto.
   - destruct (IHv1 _ _ H2) as [x ->].
-    exists (∑x, v2). unfold lift. simpl. subst_helper. reflexivity.
+    exists (∑x, v2). simpl. subst_helper. reflexivity.
   - destruct (IHv2 _ _ H2) as [x ->].
-    exists (∑v1, x). unfold lift. simpl. subst_helper. reflexivity.
+    exists (∑v1, x). simpl. subst_helper. reflexivity.
   - destruct v1; try discriminate.
     destruct v2; try discriminate.
-    unfold lift in *; simpl in *; subst_helper.
+    simpl in *; subst_helper.
     injection H0 as H0. injection H1 as H1. subst.
     exists v2. reflexivity.
   - destruct (IHv1 _ _ H2) as [x ->]. exists (⟨x, v2⟩). eauto.
   - destruct (IHv2 _ _ H2) as [x ->]. exists (⟨v1, x⟩). eauto.
   - destruct v; try discriminate.
-    unfold lift in *; simpl in *; subst_helper.
+    simpl in *; subst_helper.
     injection H0 as H0. subst. eauto.
   - destruct (IHv _ _ H0) as [x ->]. exists (π₁ x). eauto.
   - destruct v; try discriminate.
-    unfold lift in *; simpl in *; subst_helper.
+    simpl in *; subst_helper.
     injection H0 as H0. subst. eauto.
   - destruct (IHv _ _ H0) as [x ->]. exists (π₂ x). eauto.
   - destruct (IHv1 _ _ H2) as [x ->]. exists (x == v2). eauto.
   - destruct (IHv2 _ _ H2) as [x ->]. exists (v1 == x). eauto.
   - destruct (IHv _ _ H0) as [x ->]. exists (Refl(x)). eauto.
   - destruct v2; try discriminate.
-    unfold lift in *; simpl in *; subst_helper.
+    simpl in *; subst_helper.
     injection H1 as H1. subst.
     replace (k + 1) with (S k + 0) by lia.
     rewrite <- lift_subst.
     replace (k+0) with k by lia. eauto.
   - destruct (IHv1 _ _ H2) as [x ->]. exists (J(x,v2)).
-    unfold lift. simpl. subst_helper. reflexivity.
+    simpl. subst_helper. reflexivity.
   - destruct (IHv2 _ _ H2) as [x ->]. exists (J(v1,x)).
-    unfold lift. simpl. subst_helper. reflexivity.
+    simpl. subst_helper. reflexivity.
   - destruct (IHv1 _ _ H2) as [x ->]. exists (tTransport x v2). eauto.
   - destruct (IHv2 _ _ H2) as [x ->]. exists (tTransport v1 x). eauto.
 Qed.
@@ -539,7 +537,7 @@ Proof.
   end;
   eauto 10 using red, red1, subst_red with red_cong; simpl in *.
   - inversion H3; subst.
-    + unfold lift in H0. destruct v; simpl in H0; try discriminate H0.
+    + destruct v; simpl in H0; try discriminate H0.
       injection H0 as H0. subst. subst_helper. replace (0 + 1) with 1 in * by lia.
       replace ((lift 1 1 v) [^0]) with v.
       exists (λ, v); eauto using red.
@@ -549,7 +547,7 @@ Proof.
       eauto using lift_red', red.
     + inversion H2.
   - inversion H1; subst.
-    + unfold lift in H0. destruct w; try discriminate; simpl in H0.
+    + destruct w; try discriminate; simpl in H0.
       injection H0 as H0. subst. subst_helper. replace (0 + 1) with 1 in * by lia.
       replace ((lift 1 1 w) [^0]) with w.
       exists (λ, w); eauto using red.
@@ -582,7 +580,7 @@ Proof.
   - inversion H3. subst. eauto 10 using red, red1, subst_red.
 Qed.
 
-(* Lemma red1_parred u v
+Lemma red1_parred u v
 : u ▷ v -> u ⇒ v.
 Proof.
   intro uv.
@@ -602,43 +600,219 @@ Proof.
     eauto with red_cong.
 Qed.
 
+Lemma lift1_liftm (m k i : nat) (t u : term)
+: lift 1 i t = lift m (k + 1 + i) u -> exists u', t = lift m (k+i) u'.
+Proof.
+  revert m k i u. induction t; intros m k i u tu;
+  destruct u; try discriminate; simpl in *.
+  - unfold skip, jump in *. simpl in *. injection tu as tu.
+    destruct (n <? i) eqn: eq1;
+    destruct (n0 <? k+1+i) eqn: eq2; comp_cases.
+    + subst. exists (^n0). simpl. comp_cases.
+    + exists ^n. simpl. comp_cases.
+    + assert (n + 1 = n0 + m) by lia.
+      exists ^(pred n0). simpl. comp_cases.
+      f_equal. lia.
+  - exists *s. simpl. reflexivity.
+  - injection tu as tu1 tu2. subst_helper.
+    apply IHt1 in tu1.
+    replace (k + 1 + i + 1) with (k + 1 + (i + 1)) in * by lia. apply IHt2 in tu2.
+    destruct tu1, tu2. subst. 
+    exists (∏x, x0). simpl. subst_helper. f_equal. f_equal. f_equal. lia.
+  - injection tu as tu. subst_helper.
+    replace (k + 1 + i + 1) with (k + 1 + (i + 1)) in * by lia. apply IHt in tu.
+    destruct tu. subst.
+    exists (λ, x). simpl. subst_helper.
+    f_equal. f_equal. f_equal. lia.
+  - simpl in tu. injection tu as tu. subst_helper.
+    apply IHt1 in tu. apply IHt2 in H. destruct tu, H. subst.
+    exists (x @ x0). reflexivity.
+  - simpl in tu. injection tu as tu. subst_helper.
+    apply IHt1 in tu.
+    replace (k + 1 + i + 1) with (k + 1 + (i + 1)) in * by lia. apply IHt2 in H.
+    destruct tu, H. subst.
+    exists (∑x, x0). simpl. subst_helper.
+    f_equal. f_equal. f_equal. lia.
+  - simpl in tu. injection tu as tu. subst_helper.
+    apply IHt1 in tu. apply IHt2 in H. destruct tu, H. subst.
+    exists (⟨x, x0⟩). reflexivity.
+  - simpl in tu. injection tu as tu. subst_helper.
+    apply IHt in tu. destruct tu. subst.
+    exists (π₁ x). reflexivity.
+  - simpl in tu. injection tu as tu. subst_helper.
+    apply IHt in tu. destruct tu. subst.
+    exists (π₂ x). reflexivity.
+  - simpl in tu. injection tu as tu. subst_helper.
+    apply IHt1 in tu. apply IHt2 in H. destruct tu, H. subst.
+    exists (x == x0). reflexivity.
+  - injection tu as tu.
+    apply IHt in tu. destruct tu. subst.
+    exists (Refl(x)). simpl. reflexivity.
+  - simpl in tu. injection tu as tu. subst_helper.
+    replace (k + 1 + i + 1) with (k + 1 + (i + 1)) in * by lia.
+    apply IHt1 in tu. apply IHt2 in H. destruct tu, H. subst.
+    exists (J(x, x0)). simpl. subst_helper.
+    f_equal. f_equal. f_equal. lia.
+  - simpl in tu. injection tu as tu. subst_helper.
+    apply IHt1 in tu. apply IHt2 in H. destruct tu, H. subst.
+    exists (tTransport x x0). reflexivity.
+Qed.
+
 Lemma lift_parred_lift (v w : term) (n k : nat)
 : (lift n k v) ⇒ w -> exists w', w = lift n k w'.
 Proof.
-  revert n k w. induction v; intros m k w vw;
-  unfold lift in *; simpl in *; inversion vw; subst; subst_helper;
-  repeat match goal with
-  | H1 : forall n k w, update_rel (skip (jump n) k) ?v ⇒ w -> _,
-    H2 : lift _ _ ?v ⇒ ?w |- _ => apply H1 in H2
-  | H : exists _, _ |- _ => destruct H
-  end; subst; subst_helper.
-  - unfold skip, jump. comp_cases; exists ^n;
-    unfold lift, skip, jump; simpl; comp_cases.
-  - exists *s. unfold lift. simpl. reflexivity.
-  - exists (∏x0, x); unfold lift; simpl; rewrite skip_skip; subst_helper; f_equal.
-  - unfold lift in *. destruct v; try discriminate.
-    simpl in *; injection H as H H1; subst.
+  revert n k w. induction v using term_strong_ind. intros m k w vw.
+  inversion vw; destruct  v; try discriminate; eauto.
+  - destruct v1; try discriminate.
+    simpl in *. subst_helper.
+    injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    apply H in H2. 2: { subterm_solve. }
+    destruct H1 as [? ->], H2 as [? ->].
+    replace (k + 1) with (S k + 0) by lia.
+    subst_helper.
+    rewrite <- lift_subst.
+    replace (k + 0) with k by lia. eauto.
+  - destruct v; try discriminate; subst.
+    simpl in *. subst_helper.
+    injection H0 as H0. subst.
+    apply H in H1. 2:{ subterm_solve. }
+    apply H in H2. 2:{ subterm_solve. }
+    destruct H1 as [? ->], H2 as [? ->].
+    subst_helper. eauto.
+  - destruct v; try discriminate; subst.
+    subst_helper.
+    injection H0 as H0; subst.
+    apply H in H1. 2: { subterm_solve. }
+    apply H in H2. 2: { subterm_solve. }
+    destruct H1 as [? ->], H2 as [? ->].
+    subst_helper. eauto.
+  - destruct v2; try discriminate; subst.
+    subst_helper.
+    injection H0 as H0; subst. subst_helper.
+    apply H in H1. 2: { subterm_solve. }
+    apply H in H2. 2: { subterm_solve. }
+    destruct H1, H2. subst. subst_helper.
+    replace (k + 1) with (S k + 0) by lia.
+    rewrite <- lift_subst.
+    replace (k + 0) with k by lia.
+    eauto.
+  - destruct v; try discriminate.
     destruct v2; try discriminate.
-    unfold skip, jump in H1. simpl in H1. injection H1 as H1.
-    destruct (n <? k + 1) eqn: eq; comp_cases. subst. subst_helper.
+    injection H0 as H0; subst.
+    unfold skip, jump in H3. destruct (n <? 1); comp_cases. subst.
+    subst_helper.
+    assert (ex : exists u' : term, f = lift m (k + 0) u').
+    { replace (lift 1 0 f) with (lift 1 (0 + 0) f) in H0 by f_equal.
+      replace (k + 1) with (k + 1 + 0) in H0 by lia.
+      eapply lift1_liftm. eassumption.
+    }
+    destruct ex.
+    replace (k + 0) with k in * by lia. subst.
+    rewrite lift_lift' in H0.
+    apply lift_injective in H0. subst.
+    apply H in H1. assumption.
+    apply sub_lambda, subeq_sub, sub_app_l.
+    admit.
+  - simpl in *.
+    destruct v1; try discriminate.
+    destruct v2; try discriminate.
+    injection H0 as H0; subst.
+    apply H in H1. 2: { subterm_solve. }
+    apply H in H2. 2: { subterm_solve. }
+    destruct H1, H2. subst.
+    eauto.
+  - injection H0 as H0. subst.
+    subst_helper.
+    apply H in H1. 2: { subterm_solve. }
+    apply H in H2. 2: { subterm_solve. }
+    destruct H1, H2. subst.
+    exists (∏x, x0). simpl. subst_helper. reflexivity.
+  - destruct w; try discriminate. injection H2 as H2. subst.
+    simpl in H0. subst_helper. injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    destruct H1. subst.
+    exists (λ, x). simpl. subst_helper. reflexivity.
+  - destruct w; try discriminate. injection H3 as H3. subst.
+    simpl in H0. subst_helper. injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    apply H in H2. 2: { subterm_solve. }
+    destruct H1, H2. subst.
+    exists (x @ x0). simpl. subst_helper. reflexivity.
+  - destruct w; try discriminate. injection H3 as H3. subst.
+    simpl in H0. subst_helper. injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    apply H in H2. 2: { subterm_solve. }
+    destruct H1, H2. subst.
+    exists (∑x, x0). simpl. subst_helper. reflexivity.
+  - destruct w; try discriminate. injection H3 as H3. subst.
+    simpl in H0. subst_helper. injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    apply H in H2. 2: { subterm_solve. }
+    destruct H1, H2. subst.
+    exists (⟨x, x0⟩). simpl. subst_helper. reflexivity.
+  - destruct w; try discriminate. injection H2 as H2. subst.
+    simpl in H0. subst_helper. injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    destruct H1. subst.
+    exists (π₁ x). simpl. subst_helper. reflexivity.
+  - destruct w; try discriminate. injection H2 as H2. subst.
+    simpl in H0. subst_helper. injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    destruct H1. subst.
+    exists (π₂ x). simpl. subst_helper. reflexivity.
+  - destruct w; try discriminate. injection H3 as H3. subst.
+    simpl in H0. subst_helper. injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    apply H in H2. 2: { subterm_solve. }
+    destruct H1, H2. subst.
+    exists (x == x0). simpl. subst_helper. reflexivity.
+  - destruct w; try discriminate. injection H2 as H2. subst.
+    simpl in H0. subst_helper. injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    destruct H1. subst.
+    exists (Refl(x)). simpl. subst_helper. reflexivity.
+  - destruct w; try discriminate. injection H3 as H3. subst.
+    simpl in H0. subst_helper. injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    apply H in H2. 2: { subterm_solve. }
+    destruct H1, H2. subst.
+    exists (J(x, x0)). simpl. subst_helper. reflexivity.
+  - destruct w; try discriminate. injection H3 as H3. subst.
+    simpl in H0. subst_helper. injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    apply H in H2. 2: { subterm_solve. }
+    destruct H1, H2. subst.
+    exists (tTransport x x0). simpl. subst_helper. reflexivity.
 Admitted.
 
 Lemma lift_parred' (v w : term) (n k : nat)
 : lift n k v ⇒ lift n k w -> v ⇒ w.
 Proof.
-  revert n k w. induction v; intros m k w vw;
-  unfold lift in *; simpl in *; inversion vw; subst.
-  - admit.
-  - admit.
-  -
-  (* destruct w; simpl in *; try discriminate;
-  eauto using parred.
-  - injection H as H.
-    unfold skip, jump in *;
-    destruct (n <? k) eqn: eq1;
-    destruct (n1 <? k) eqn: eq2;
-    comp_cases; replace n1 with n by lia; eauto using parred.
-  *)
+  revert n k w. induction v using term_strong_ind; intros m k w vw;
+  simpl in *; inversion vw; subst.
+  - destruct v, w; try discriminate.
+    unfold skip, jump in *. simpl in *.
+    destruct (n0 <? k) eqn: eq1, (n1 <? k) eqn: eq2; comp_cases.
+    + injection H1 as H1. injection H2 as H2. subst.
+      apply parred_rel.
+    + injection H1 as H1. injection H2 as H2. lia.
+    + injection H1 as H1. injection H2 as H2. lia.
+    + injection H1 as H1. injection H2 as H2. subst.
+      assert (n0 = n1) by lia. subst. apply parred_rel.
+  - destruct v, w; try discriminate.
+    simpl in *. assumption.
+  - destruct v; try discriminate.
+    destruct v1; try discriminate.
+    simpl in *. injection H0 as H0. subst. subst_helper.
+    subterm_IH_split; simpl in *.
+    assert (H : exists w', u' = lift m k w'). { eapply lift_parred_lift. eassumption. }
+    destruct H. subst.
+    assert (H : exists t'', t' = lift m (k + 1) t''). { eapply lift_parred_lift. eassumption. }
+    destruct H as [? ->].
+    specialize (IH3 _ _ _ H2).
+    specialize (IH1 _ _ _ H3).
+    admit.
 Admitted.
 
 Lemma red_cr (u v w : term)
@@ -666,7 +840,7 @@ Proof.
   end;
   eauto 10 using parred, parred_identity; simpl in *.
   - inversion H3; inversion H4; subst.
-    + unfold lift in H. destruct v; simpl in H; try discriminate H.
+    + destruct v; simpl in H; try discriminate H.
       injection H as H. subst. subst_helper. replace (0 + 1) with 1 in * by lia.
       destruct (lift_parred_lift _ _ _ _ H1) as [x ->].
       exists (λ, x); split.
@@ -679,7 +853,7 @@ Proof.
       * apply lift_parred' in H1. assumption.
       * apply parred_eta_lambda, parred_identity.
   - inversion H1; subst.
-    + unfold lift in H0. destruct f; try discriminate; simpl in H0.
+    + destruct f; try discriminate; simpl in H0.
       injection H0 as H0. subst. subst_helper. replace (0 + 1) with 1 in * by lia.
       replace ((lift 1 1 f)[^0]) with f. { eauto using parred, parred_identity. }
       rewrite lift_subst_rel0; eauto. exact 0.
@@ -695,7 +869,7 @@ Proof.
   - inversion H3; subst.
     + inversion H6; subst.
       inversion H4; subst.
-      unfold lift in H. destruct u'; try discriminate; simpl in H;
+      destruct u'; try discriminate; simpl in H;
       injection H as H; subst; subst_helper; replace (0 + 1) with 1 in * by lia.
       admit.
       admit.
@@ -823,7 +997,7 @@ Proof.
 
   repeat match goal with
   | H : ?a ⇒ ?b |- _ => inversion H; clear H; subst
-  end; simpl in *; unfold lift, skip, jump in *; simpl in *;
+  end; simpl in *; unfold skip, jump in *; simpl in *;
   repeat match goal with
   | H : ?a = ?b |- _ => injection H as H; subst
   end.
@@ -872,40 +1046,6 @@ Proof.
   | H : exists z, _ /\ _ |- _ => destruct H as [? [? ?]]
   end;
   eauto 10 using parred, subst_parred.
-  - admit.
-  - admit.
-  - admit.
-  - inversion H7; subst.
-    + admit.
-    + assert (IHt : exists z, t' ⇒ z /\ t'0 ⇒ z). { eapply H; try eassumption; subterm_solve. }
-      destruct IHt as [? [? ?]].
-      exists (x0 [x]). eauto using parred, subst_parred.
-  - inversion H2; subst.
-    + admit.
-    + assert (IHt : exists z, t' ⇒ z /\ t'0 ⇒ z). { eapply H; try eassumption; subterm_solve. }
-      destruct IHt as [? [? ?]].
-      eauto using parred, subst_parred.
-  - assert (pi_uv : π₁ u ⇒ π₁ v). eauto using parred.
-    assert (pi_v0v : π₂ v0 ⇒ π₂ v). eauto using parred.
-    assert (IHu : exists y, u' ⇒ y /\ π₁ v ⇒ y). { eapply H; try eassumption; subterm_solve. }
-    assert (IHv : exists y, v' ⇒ y /\ π₂ v ⇒ y). { eapply H; try eassumption; subterm_solve. }
-    destruct IHu as [y [? ?]]. destruct IHv as [z [? ?]].
-    
-    exists (⟨y, z⟩). split; eauto using parred.
-    admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - inversion H9; subst.
-    assert (IHx : exists z, x' ⇒ z /\ u' ⇒ z). { eapply H; try eassumption; subterm_solve. }
-    destruct IHx as [? [? ?]].
-    eauto using parred, subst_parred.
-  - inversion H4; subst.
-    assert (IHx : exists z, x' ⇒ z /\ u' ⇒ z). { eapply H; try eassumption; subterm_solve. }
-    destruct IHx as [? [? ?]].
-    eauto using parred, subst_parred.
 Admitted.
 
 Lemma parred_pair_pi2 u v p
@@ -934,7 +1074,7 @@ Proof.
   eauto using parred, subst_parred.
   - admit.
   - simpl in *.
-    destruct (term_eq_dec (parred_nf u0) (parred_nf v0)) as [eq|neq].
+    destruct (term_eq_dec u0 v0) as [eq|neq].
     { assumption. }
     assert (u0v : π₁ u0 ⇒ π₁ v). { eauto using parred. }
     assert (v0v : π₂ v0 ⇒ π₂ v). { eauto using parred. }
@@ -951,36 +1091,9 @@ Proof.
     inversion u0v; inversion v0v; subst.
     + injection H8 as H8; subst.
       eauto using parred.
-    + apply parred_pair; eauto.
-      
-
-      
-
-  - admit.
-  - simpl.
-    destruct (term_eq_dec (parred_nf u) (parred_nf v)) as [eq | neq].
-    { assumption. }
-    
-    
-
-  - simpl. rewrite sumboolT by reflexivity. assumption.
-  - destruct uv1; eauto using parred.
-    simpl in *. inversion IHuv1.
-    apply parred_beta_app; assumption.
-  - destruct u; eauto using parred.
-    destruct v; eauto using parred.
-    simpl. destruct (term_eq_dec u v) as [<-|neq].
-    + simpl in *. admit.
     + admit.
-  (* - destruct uv; eauto using parred.
-    simpl in *. inversion IHuv.
-    eapply parred_beta_pi1; eassumption.
-  - destruct uv; eauto using parred.
-    simpl in *. inversion IHuv.
-    eapply parred_beta_pi2; eassumption.
-  - destruct uv2; eauto using parred.
-    simpl in *. inversion IHuv2.
-    eapply parred_beta_J; eassumption. *)
+    + admit.
+    + admit.
 Admitted.
 
 Lemma parred_diamond {u v w : term} (uv : u ⇒ v) (uw : u ⇒ w)
@@ -1053,15 +1166,14 @@ Admitted.
 Lemma parred_example_1 p
 : ⟨π₁ ⟨π₁ p,π₂ p⟩, π₂ ⟨π₁ p,π₂ p⟩⟩ ⇒ p.
 Proof.
-  apply parred_eta_pair.
-  apply parred_eta_pair.
+  apply parred_eta_pair;
+  apply parred_eta_pair;
   apply parred_identity.
 Qed.
 
 Lemma parred_example_2 p
 : ⟨π₁ ⟨π₁ p,π₂ p⟩, π₂ ⟨π₁ p,π₂ p⟩⟩ ⇒ ⟨π₁ p, π₂ p⟩.
 Proof.
-  apply parred_eta_pair.
+  apply parred_eta_pair;
   apply parred_identity.
 Qed.
- *)
