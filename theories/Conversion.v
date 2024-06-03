@@ -543,26 +543,55 @@ Lemma lift_red1' (v w : term) (n k : nat)
 : (lift n k v ▷ w) -> exists w', v ▷ w'.
 Proof.
   revert w n k.
-  induction v using term_strong_ind;
+  induction v using term_strong_ind';
   intros w n k vw.
   destruct v; simpl in vw; subst_helper;
   inversion vw; subst.
-  - assert (s_v1 : subterm v1 (∏v1, v2)) by subterm_solve.
+  - assert (s_v1 : subterm (clear_rel v1) (∏(clear_rel v1), (clear_rel v2))) by subterm_solve.
     destruct (H _ s_v1 _ _ _ H3) as [x v1x].
     exists (∏x, v2). eauto using red1.
-  - assert (s_v2 : subterm v2 (∏v1, v2)) by subterm_solve.
+  - assert (s_v2 : subterm (clear_rel v2) (∏(clear_rel v1), (clear_rel v2))) by subterm_solve.
     destruct (H _ s_v2 _ _ _ H3) as [x v2x].
     exists (∏v1, x). eauto using red1.
-  - destruct v; simpl in H1; try discriminate H1; subst_helper.
+  - destruct v; try discriminate.
+    destruct v2; try discriminate.
+    destruct n0. 2: { injection H1. unfold skip, jump. comp_cases. }
     injection H1 as H1.
-    destruct v2; simpl in H0; try discriminate H0; subst_helper.
-    injection H0 as H0.
-    unfold skip, jump in H0. destruct (n0 <? k + 1) eqn: eq in H0; comp_cases.
-    subst.
-    simpl in vw.
-    replace (^(skip (jump n) (k + 1) 0)) with ^0 in *.
-    2: { unfold skip, jump. comp_cases. }
-Admitted.
+    replace v1 with (lift 1 0 (unlift 1 0 v1)).
+    2: {
+      eapply lift_unlift.
+      replace (k + 1) with (k + 0 + 1) in * by lia. eassumption.
+    }
+    exists (unlift 1 0 v1). eauto using red1.
+  - apply H in H1. destruct H1 as [x v1x]. eauto using red1.
+    subterm_solve.
+  - destruct v1; try discriminate. eauto using red1.
+  - apply H in H3. destruct H3 as [x v1x]. eauto using red1.
+    subterm_solve.
+  - apply H in H3. destruct H3 as [x v2x]. eauto using red1.
+    subterm_solve.
+  - apply H in H3. destruct H3. eauto using red1. subterm_solve.
+  - apply H in H3. destruct H3. eauto using red1. subterm_solve.
+  - destruct v1; try discriminate.
+    destruct v2; try discriminate.
+    injection H1 as H1. injection H2 as H2. subst.
+    apply lift_injective in H1. subst.
+    eauto using red1.
+  - apply H in H3. destruct H3. eauto using red1. subterm_solve.
+  - apply H in H3. destruct H3. eauto using red1. subterm_solve.
+  - destruct v; try discriminate. eauto using red1.
+  - apply H in H1. destruct H1. eauto using red1. subterm_solve.
+  - destruct v; try discriminate. eauto using red1.
+  - apply H in H1. destruct H1. eauto using red1. subterm_solve.
+  - apply H in H3. destruct H3. eauto using red1. subterm_solve.
+  - apply H in H3. destruct H3. eauto using red1. subterm_solve.
+  - apply H in H1. destruct H1. eauto using red1. subterm_solve.
+  - destruct v2; try discriminate. eauto using red1.
+  - apply H in H3. destruct H3. eauto using red1. subterm_solve.
+  - apply H in H3. destruct H3. eauto using red1. subterm_solve.
+  - apply H in H3. destruct H3. eauto using red1. subterm_solve.
+  - apply H in H3. destruct H3. eauto using red1. subterm_solve.
+Qed.
 
 Lemma lift_eq (v w : term) (k i : nat)
 : lift 1 i v = lift 1 (k + i + 1) w -> v = lift 1 (k + i) (unlift 1 (k + i) v).
