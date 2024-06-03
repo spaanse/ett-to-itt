@@ -834,7 +834,7 @@ Qed.
 Lemma lift_parred_lift (v w : term) (n k : nat)
 : (lift n k v) ⇒ w -> exists w', w = lift n k w'.
 Proof.
-  revert n k w. induction v using term_strong_ind. intros m k w vw.
+  revert n k w. induction v using term_strong_ind'. intros m k w vw.
   inversion vw; destruct  v; try discriminate; eauto.
   - destruct v1; try discriminate.
     simpl in *. subst_helper.
@@ -886,7 +886,8 @@ Proof.
     apply lift_injective in H0. subst.
     apply H in H1. assumption.
     apply sub_lambda, subeq_sub, sub_app_l.
-    admit.
+    rewrite clear_rel_lift.
+    apply subeq_refl.
   - simpl in *.
     destruct v1; try discriminate.
     destruct v2; try discriminate.
@@ -957,7 +958,7 @@ Proof.
     apply H in H2. 2: { subterm_solve. }
     destruct H1, H2. subst.
     exists (tTransport x x0). simpl. subst_helper. reflexivity.
-Admitted.
+Qed.
 
 Lemma lift_parred' (v w : term) (n k : nat)
 : lift n k v ⇒ lift n k w -> v ⇒ w.

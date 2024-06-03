@@ -22,6 +22,7 @@ Ltac comp_cases :=
   | H : (_ ?= _) = Gt |- _ => apply nat_compare_Gt_gt in H
   end.
 
+(* from: https://julesjacobs.com/notes/coq-cheatsheet/coq-cheatsheet.pdf *)
 Lemma strong_induction (P : nat -> Prop) :
 (forall n, (forall m, m < n -> P m) -> P n) -> forall n, P n.
 Proof.
@@ -30,3 +31,14 @@ intros H n. eapply H. induction n.
 - intros m Hm. eapply H.
 intros k Hk. eapply IHn. lia.
 Qed.
+
+Ltac simplify_eqs :=
+repeat match goal with
+| H : ?x = _ |- _ => subst x
+| H : _ = ?x |- _ => subst x
+| H : _ = _ |- _ => discriminate H
+| H : ?x = ?x |- _ => clear H
+| H : ?f _ = ?f _ |- _ => progress injection H as H
+| H : ?f _ _ = ?f _ _ |- _ => progress injection H as H
+| H : ?f _ _ _ = ?f _ _ _ |- _ => progress injection H as H
+end.

@@ -77,31 +77,59 @@ Proof.
   all: subst; eauto.
   all: eauto using subeq_sub, subterm_trans'.
 Qed.
-(* 
-Notation clear_rel k := (update_rel (skip (fun _ => 0) k)).
+
+
+Fixpoint clear_rel (t : term) : term :=
+match t with
+| ^i => ^0
+| *s => *s
+| λ, t => λ, clear_rel t
+| u @ v => (clear_rel u) @ (clear_rel v)
+| ∏A, B => ∏clear_rel A, clear_rel B
+| ∑A, B => ∑clear_rel A, clear_rel B
+| ⟨u, v⟩ => ⟨clear_rel u, clear_rel v⟩
+| π₁ p => π₁ (clear_rel p)
+| π₂ p => π₂ (clear_rel p)
+| u == v => (clear_rel u) == (clear_rel v)
+| Refl(u) => Refl(clear_rel u)
+| J(t, p) => J(clear_rel t, clear_rel p)
+
+| tTransport p t => tTransport (clear_rel p) (clear_rel t)
+end.
+
+Lemma clear_rel_lift (n k : nat) (t : term)
+: clear_rel (lift n k t) = clear_rel t.
+Proof.
+  revert n k. induction t; intros m k;
+  simpl; f_equal; subst_helper; eauto.
+Qed.
 
 Lemma term_strong_ind' (P : term -> Prop) :
-  (forall t, (forall u k, subterm (clear_rel k u) (clear_rel k t) -> P u) -> P t) ->
+  (forall t, (forall u, subterm (clear_rel u) (clear_rel t) -> P u) -> P t) ->
   (forall t, P t).
 Proof.
   intros H t.
-  enough (H0 : forall u, (forall k, subterm_eq (clear_rel k u) (clear_rel k t)) -> P u).
-  { apply H0. intro k. apply subeq_refl. }
+  enough (H0 : forall u, subterm_eq (clear_rel u) (clear_rel t) -> P u).
+  { apply H0. apply subeq_refl. }
   induction t; intros u ut.
-  { specialize (ut 0). inversion ut; subst.
+  { inversion ut; subst.
     - destruct u; try discriminate.
-      apply H. intros v k vt. inversion vt.
+      apply H. intros v vt. inversion vt.
     - inversion H0.
-  }{specialize (ut 0). inversion ut; subst.
+  }{inversion ut; subst.
     - destruct u; try discriminate.
-      apply H. intros v k vt. inversion vt.
+      apply H. intros v vt. inversion vt.
     - inversion H0.
   }
-  all: apply H; intros v vu.
-  all: inversion ut; subst; [inversion vu | inversion H0].
-  all: subst; eauto.
+  all: apply H; intros v vu; simpl in *.
+  all: inversion ut; subst; simpl in *; [inversion vu | inversion H0].
+  all: subst; eauto using subeq_sub, subterm_trans'.
+  all: destruct u; try discriminate; simpl in *.
+  all: injection H0 as H0; simplify_eqs.
+  all: try rewrite H0 in *.
+  all: try rewrite H2 in *.
   all: eauto using subeq_sub, subterm_trans'.
-Qed. *)
+Qed.
 
 Lemma subterm_IH (P : term -> Prop) u v :
   (forall w, subterm w u -> P w) ->
