@@ -387,13 +387,157 @@ Lemma lift_red' (v w : term)  (n k : nat)
 Proof.
   revert n k w.
   induction v using term_strong_ind.
-  intros n k w vw.
-  inversion vw.
+  intros n k w vw. inversion vw.
   - destruct v; try discriminate.
     destruct v1; try discriminate.
     simpl in H1. subst_helper.
     injection H1 as H1. subst.
-Admitted.
+    replace (k + 1) with (S k + 0) in * by lia.
+    rewrite <- lift_subst in H2.
+    replace (k + 0) with k in * by lia.
+    apply lift_injective in H2. subst.
+    eauto using red1.
+  - destruct v; try discriminate.
+    destruct v; try discriminate.
+    simpl in H1.
+    injection H1 as H1. subst.
+    apply lift_injective in H0. subst.
+    eauto using red1.
+  - destruct v; try discriminate.
+    destruct v; try discriminate.
+    simpl in H1.
+    injection H1 as H1. subst.
+    apply lift_injective in H0. subst.
+    eauto using red1.
+  - destruct v; try discriminate.
+    destruct v2; try discriminate.
+    injection H1 as H1; subst; subst_helper.
+    replace (k + 1) with (S k + 0) in * by lia.
+    rewrite <- lift_subst in H2.
+    replace (k + 0) with k in * by lia.
+    apply lift_injective in H2. subst.
+    eauto using red1.
+  - destruct v; try discriminate.
+    destruct v; try discriminate.
+    destruct v2; try discriminate.
+    destruct n0; try discriminate.
+    2: { injection H1 as H1. revert H2. unfold skip, jump. comp_cases. }
+    injection H1 as H1. subst_helper.
+    subst.
+    rewrite lift_lift' in H1.
+    apply lift_injective in H1. subst.
+    eauto using red1.
+  - destruct v; try discriminate.
+    destruct v1; try discriminate.
+    destruct v2; try discriminate.
+    injection H1 as H1; subst.
+    apply lift_injective in H0.
+    apply lift_injective in H2.
+    subst.
+    eauto using red1.
+  - destruct v; try discriminate.
+    destruct w; try discriminate.
+    injection H0 as H0. subst_helper.
+    injection H1 as H1; subst; subst_helper.
+    apply lift_injective in H4; subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H1; subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H4. subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H1. subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H4. subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H1. subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H4. subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H1. subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H4. subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H1. subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H4. subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H1. subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v,w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H4. subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst; subst_helper.
+    apply lift_injective in H1. subst.
+    apply H in H2. eauto using red1.
+    subterm_solve.
+Qed.
+
+Lemma lift_unlift (n m k : nat) (u t : term)
+: lift 1 k u = lift n (m + k + 1) t -> 
+  lift 1 k (unlift 1 k t) = t.
+Proof.
+  revert u k. induction t; intros u k H;
+  simpl; subst_helper; f_equal;
+  destruct u; try discriminate;
+  injection H as H; subst_helper; eauto;
+  replace (m + k + 1 + 1) with (m + (k + 1) + 1) in * by lia;
+  replace (m + (k + 1) + 1) with (m + k + 1 + 1) by lia; eauto.
+  unfold skip, jump, unjump. comp_cases.
+  revert H. unfold skip, jump. comp_cases.
+Qed.
 
 Lemma lift_red1' (v w : term) (n k : nat)
 : (lift n k v ▷ w) -> exists w', v ▷ w'.
