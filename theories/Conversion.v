@@ -978,15 +978,21 @@ Proof.
     simpl in *. assumption.
   - destruct v; try discriminate.
     destruct v1; try discriminate.
-    simpl in *. injection H0 as H0. subst. subst_helper.
-    subterm_IH_split; simpl in *.
-    assert (H : exists w', u' = lift m k w'). { eapply lift_parred_lift. eassumption. }
-    destruct H. subst.
-    assert (H : exists t'', t' = lift m (k + 1) t''). { eapply lift_parred_lift. eassumption. }
-    destruct H as [? ->].
-    specialize (IH3 _ _ _ H2).
-    specialize (IH1 _ _ _ H3).
-    admit.
+    injection H0 as H0; subst. subst_helper.
+    destruct (lift_parred_lift _ _ _ _ H2) as [x ->].
+    destruct (lift_parred_lift _ _ _ _ H3) as [y ->].
+    apply H in H2. 2: { subterm_solve. }
+    apply H in H3. 2: { subterm_solve. }
+    replace (k + 1) with (S k + 0) in H1 by lia.
+    rewrite <- lift_subst in H1.
+    replace (k + 0) with k in H1 by lia.
+    apply lift_injective in H1. subst.
+    eauto using parred.
+  - destruct v; try discriminate.
+    destruct v; try discriminate.
+    injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    
 Admitted.
 
 Lemma red_cr (u v w : term)
