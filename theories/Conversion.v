@@ -52,10 +52,10 @@ where "a '≡' b" := (conv a b) : r_scope.
 Inductive parred : term -> term -> Prop :=
 | parred_rel n              : ^n ⇒ ^n
 | parred_sort s             : *s ⇒ *s
-| parred_beta_app t t' u u' : t ⇒ t' -> u ⇒ u' -> (λ,t) @ u ⇒ t'[u']
-| parred_beta_pi1 u u' v v' : u ⇒ u' -> v ⇒ v' -> π₁ ⟨u, v⟩ ⇒ u'
-| parred_beta_pi2 u u' v v' : u ⇒ u' -> v ⇒ v' -> π₂ ⟨u, v⟩ ⇒ v'
-| parred_beta_J t t' x x'   : t ⇒ t' -> x ⇒ x' -> J(t, Refl(x)) ⇒ t'[x']
+| parred_beta_app t t' u u' : t ⇒ (λ, t') -> u ⇒ u' -> t @ u ⇒ t'[u']
+| parred_beta_pi1 p u v     : p ⇒ ⟨u, v⟩ -> π₁ p ⇒ u
+| parred_beta_pi2 p u v     : p ⇒ ⟨u, v⟩ -> π₂ p ⇒ v
+| parred_beta_J t t' x x'   : t ⇒ t' -> x ⇒ Refl(x') -> J(t, x) ⇒ t'[x']
 | parred_eta_lambda f f'    : f ⇒ f' -> (λ, lift 1 0 f @ ^0) ⇒ f'
 | parred_eta_pair u v p     : u ⇒ p -> v ⇒ p -> ⟨π₁ u, π₂ v⟩ ⇒ p
 | parred_prod A A' B B'     : A ⇒ A' -> B ⇒ B' -> ∏ A, B ⇒ ∏ A', B'
