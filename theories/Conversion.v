@@ -594,7 +594,7 @@ Proof.
 Qed.
 
 Lemma lift_eq (v w : term) (k i : nat)
-: lift 1 i v = lift 1 (k + i + 1) w -> v = lift 1 (k + i) (unlift 1 (k + i) v).
+: lift 1 i v = lift 1 (k + i + 1) w ->  lift 1 (k + i) (unlift 1 (k + i) v) = v.
 Proof.
   revert k i w; induction v; intros k i w vw;
   simpl; subst_helper; f_equal;
@@ -618,7 +618,7 @@ Proof.
 Qed.
 
 Lemma lift_eq' (v w : term) (k : nat)
-: lift 1 0 v = lift 1 (k + 1) w -> v = lift 1 k (unlift 1 k v).
+: lift 1 0 v = lift 1 (k + 1) w -> lift 1 k (unlift 1 k v) = v.
 Proof.
   intro vw. replace k with (k + 0) by lia. eapply lift_eq.
   replace (k+0) with k by lia. eassumption.
@@ -639,7 +639,7 @@ Proof.
     unfold skip, jump in H1. simpl in H1. injection H1 as H1.
     destruct (Nat.ltb n (k+1)); try lia. subst; simpl in *.
     exists (unlift 1 k w).
-    eapply lift_eq'. eassumption.
+    symmetry. eapply lift_eq'. eassumption.
   - destruct (IHv _ _ H0) as [x ->].
     exists (λ, x). simpl. subst_helper. reflexivity.
   - destruct v1; try discriminate.
@@ -963,7 +963,7 @@ Qed.
 Lemma lift_parred' (v w : term) (n k : nat)
 : lift n k v ⇒ lift n k w -> v ⇒ w.
 Proof.
-  revert n k w. induction v using term_strong_ind; intros m k w vw;
+  revert n k w. induction v using term_strong_ind'; intros m k w vw;
   simpl in *; inversion vw; subst.
   - destruct v, w; try discriminate.
     unfold skip, jump in *. simpl in *.
@@ -992,10 +992,98 @@ Proof.
     destruct v; try discriminate.
     injection H0 as H0. subst.
     apply H in H1. 2: { subterm_solve. }
-    
-Admitted.
+    eauto using parred, parred_identity.
+  - destruct v; try discriminate.
+    destruct v; try discriminate.
+    injection H0 as H0. subst.
+    apply H in H2. 2: { subterm_solve. }
+    eauto using parred, parred_identity.
+  - destruct v; try discriminate.
+    destruct v2; try discriminate.
+    injection H0 as H0. subst. subst_helper.
+    destruct (lift_parred_lift _ _ _ _ H2) as [x ->].
+    destruct (lift_parred_lift _ _ _ _ H3) as [y ->].
+    apply H in H2. 2: { subterm_solve. }
+    apply H in H3. 2: { subterm_solve. }
+    replace (k + 1) with (S k + 0) in H1 by lia.
+    rewrite <- lift_subst in H1.
+    replace (k + 0) with k in H1 by lia.
+    apply lift_injective in H1. subst.
+    eauto using parred.
+  - destruct v; try discriminate.
+    destruct v; try discriminate.
+    destruct v2; try discriminate.
+    injection H0 as H0. subst. subst_helper.
+    revert H2. unfold skip, jump. comp_cases. intros <-.
+    replace (k + 1) with (k + 1 + 0) in H0 by lia.
+    destruct (lift1_liftm _ _ _ _ _ H0) as [? ->].
+    replace (k + 0) with k in * by lia.
+    replace (k + 1 + 0) with (k + 1) in * by lia.
+    rewrite lift_lift' in H0.
+    apply lift_injective in H0. subst.
+    apply H in H1. 2: { simpl. rewrite clear_rel_lift. subterm_solve. }
+    eauto using parred.
+  - destruct v; try discriminate.
+    destruct v1; try discriminate.
+    destruct v2; try discriminate.
+    injection H0 as H0. subst.
+    apply H in H1. 2: { subterm_solve. }
+    apply H in H2. 2: { subterm_solve. }
+    eauto using parred.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst. subst_helper.
+    apply H in H2. 2: { subterm_solve. }
+    apply H in H3. 2: { subterm_solve. }
+    eauto using parred.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst. subst_helper.
+    apply H in H2. 2: { subterm_solve. }
+    eauto using parred.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst. subst_helper.
+    apply H in H2. 2: { subterm_solve. }
+    apply H in H3. 2: { subterm_solve. }
+    eauto using parred.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst. subst_helper.
+    apply H in H2. 2: { subterm_solve. }
+    apply H in H3. 2: { subterm_solve. }
+    eauto using parred.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst. subst_helper.
+    apply H in H2. 2: { subterm_solve. }
+    apply H in H3. 2: { subterm_solve. }
+    eauto using parred.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst. subst_helper.
+    apply H in H2. 2: { subterm_solve. }
+    eauto using parred.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst. subst_helper.
+    apply H in H2. 2: { subterm_solve. }
+    eauto using parred.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst. subst_helper.
+    apply H in H2. 2: { subterm_solve. }
+    apply H in H3. 2: { subterm_solve. }
+    eauto using parred.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst. subst_helper.
+    apply H in H2. 2: { subterm_solve. }
+    eauto using parred.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst. subst_helper.
+    apply H in H2. 2: { subterm_solve. }
+    apply H in H3. 2: { subterm_solve. }
+    eauto using parred.
+  - destruct v, w; try discriminate.
+    injection H0 as H0. injection H1 as H1. subst. subst_helper.
+    apply H in H2. 2: { subterm_solve. }
+    apply H in H3. 2: { subterm_solve. }
+    eauto using parred.
+Qed.
 
-Lemma red_cr (u v w : term)
+Lemma red_cr' (u v w : term)
 : u ▷ v -> u ⇒ w -> exists x : term, v ⇒ x /\ w ⇒ x.
 Proof.
   revert v w.
@@ -1195,29 +1283,23 @@ Lemma parred_dp (u v w : term)
 : u ⇒ v -> u ⇒ w -> exists x, v ⇒ x /\ w ⇒ x.
 Proof.
   revert v w.
-  induction u using term_strong_ind.
+  induction u using term_strong_ind'.
   intros v w uv uw.
   destruct u; inversion uv; inversion uw; subst;
+  simplify_eqs;
   repeat match goal with
-  | H : ?x = _ |- _ => subst x
-  | H : _ = ?x |- _ => subst x
-  | H : _ = _ |- _ => discriminate H
-  | H : ?x = ?x |- _ => clear H
-  | H : ?f _ = ?f _ |- _ => progress injection H as H
-  | H : ?f _ _ = ?f _ _ |- _ => progress injection H as H
-  | H : ?f _ _ _ = ?f _ _ _ |- _ => progress injection H as H
   | H : lift ?n ?k ?v = lift ?n ?k ?w |- _ => apply lift_injective in H
   | |- exists x, ?u ▸ x /\ ?u ▸ x => ( exists u; split; apply red_refl )
-  end;
+  end; simpl in *;
   repeat match goal with
-  | IH : forall u, subterm u ?y -> forall v w, u ⇒ v -> u ⇒ w -> _,
+  | IH : forall u, subterm (clear_rel u) ?y -> forall v w, u ⇒ v -> u ⇒ w -> _,
     H1 : ?x ⇒ ?w1,
     H2 : ?x ⇒ ?w2 |- _ =>
       lazymatch goal with
       | H : exists z, w1 ⇒ z /\ w2 ⇒ z |- _ => fail
       | H : exists z, w2 ⇒ z /\ w1 ⇒ z |- _ => fail
       | |- _ =>
-        assert (st : subterm x y) by subterm_solve;
+        assert (st : subterm (clear_rel x) y) by subterm_solve;
         assert (exists z, w1 ⇒ z /\ w2 ⇒ z) by eauto;
         clear st
       end
@@ -1226,6 +1308,66 @@ Proof.
   | H : exists z, _ /\ _ |- _ => destruct H as [? [? ?]]
   end;
   eauto 10 using parred, subst_parred.
+  - subst. eapply H; try eassumption.
+    rewrite clear_rel_lift. subterm_solve.
+  - inversion H4; subst.
+    + destruct f; try discriminate.
+      injection H0 as H0. subst. subst_helper.
+      inversion H6. subst.
+      enough (λ, f ⇒ λ, t'0[^0]).
+      { eapply H; try eassumption.
+        simpl. subst_helper. rewrite clear_rel_lift. subterm_solve. }
+      apply parred_lambda.
+      replace f with ((lift 1 1 f)[^0]) by apply lift_subst_rel.
+      apply subst_parred; eauto using parred.
+    + inversion H6. subst.
+      destruct (lift_parred_lift _ _ _ _ H3) as [x ->].
+      apply lift_parred' in H3.
+      rewrite clear_rel_lift in H.
+      assert (st : subterm (clear_rel f) (λ, clear_rel f @ ^0)) by subterm_solve.
+      destruct (H _ st _ _ H1 H3) as [y [vy xy]].
+      eauto using parred.
+  - inversion H1; subst.
+    + destruct f; try discriminate.
+      injection H0 as H0. subst. subst_helper.
+      inversion H6. subst.
+      enough (λ, f ⇒ λ, t'0[^0]).
+      { eapply H; try eassumption.
+        simpl. subst_helper. rewrite clear_rel_lift. subterm_solve. }
+      apply parred_lambda.
+      replace f with ((lift 1 1 f)[^0]) by apply lift_subst_rel.
+      apply subst_parred; eauto using parred.
+    + inversion H6. subst.
+      destruct (lift_parred_lift _ _ _ _ H3) as [x ->].
+      apply lift_parred' in H3.
+      rewrite clear_rel_lift in H.
+      assert (st : subterm (clear_rel f) (λ, clear_rel f @ ^0)) by subterm_solve.
+      destruct (H _ st _ _ H4 H3) as [y [vy xy]].
+      eauto using parred.
+  - clear H4 H9.
+    inversion H7; clear H7; subst.
+    + inversion H2; clear H2; subst.
+      * inversion H8. clear H8. subst.
+        destruct f; try discriminate.
+        injection H3 as H3. subst. subst_helper.
+        destruct (lift_parred_lift _ _ _ _ H6) as [y ->].
+        apply lift_parred' in H6.
+        rewrite lift_subst_rel in *.
+        assert (fy : λ, f ⇒ λ, y) by eauto using parred.
+        assert (st : subterm (clear_rel (λ, f)) ((λ, clear_rel (lift 1 0 (λ, f) @ ^0)) @ clear_rel u2)).
+        { simpl. subst_helper. rewrite clear_rel_lift. eauto 10 using subterm, subterm_eq. }
+        destruct (H _ st _ _ H4 fy) as [z [u'0z yz]].
+        inversion yz; subst.
+        -- simpl. rewrite lift0k.
+           rewrite subst_lift by lia. rewrite lift0k.
+           eauto using parred.
+        -- 
+      * 
+    + assert (st : subterm (clear_rel t) ((λ, clear_rel t) @ clear_rel u2)) by subterm_solve.
+      destruct (H _ st _ _ H2 H4) as [y [t'y t'0y]].
+      exists (y[x]). eauto using parred, subst_parred.
+    
+    
 Admitted.
 
 Lemma parred_pair_pi2 u v p
@@ -1283,26 +1425,20 @@ Proof.
   split; apply parred_strong_diamond; assumption.
 Qed.
 
-
-
-(* Lemma red1_wcr { u v w : term} (uv : u ▷ v) (uw : u ▷ w)
+Lemma red1_wcr { u v w : term} (uv : u ▷ v) (uw : u ▷ w)
 : exists x, v ▸ x /\ w ▸ x.
 Proof.
   apply red1_parred in uv.
   apply red1_parred in uw.
   destruct (parred_diamond uv uw) as [x [vx wx]].
   exists x. split; apply parred_red; assumption.
-Qed. *)
+Qed.
 
-Lemma red1_wcr { u v w : term } (uv : u ▸ v) (uw : u ▸ w)
+Lemma red_cr { u v w : term } (uv : u ▸ v) (uw : u ▸ w)
 : exists x, v ▸ x /\ w ▸ x.
 Proof.
   revert w uw. induction uv; intros w' uw. { exists w'. eauto using red. }
   induction uw. { exists w. eauto using red. }
-  
-
-  
-
 Admitted.
 
 Lemma conv_sym u v
