@@ -4,6 +4,13 @@ Open Scope t_scope.
 Open Scope subst_scope.
 Open Scope i_scope.
 
+(* Notation "x '[' T '≅' U ']' y" := (∑ (T == U), tTransport ^0 (lift 1 0 x) == (lift 1 0 y)) (at level 12, only parsing) : t_scope. *)
+Definition Heq T U x y := ∑ (T == U), tTransport ^0 (lift 1 0 x) == (lift 1 0 y).
+Definition Pack A B := ∑ A, ∑ (lift 1 0 B), Heq (lift 2 0 A) (lift 2 0 B) ^1 ^0.
+Definition Proj₁ p := π₁ p.
+Definition Proj₂ p := π₁ π₂ p.
+Definition Projₑ p := π₂ π₂ p.
+
 Fixpoint Proj1N (n k : nat) (t : term) : term :=
 match t with
   | ^i =>
