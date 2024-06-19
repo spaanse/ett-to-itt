@@ -313,65 +313,6 @@ Proof.
     replace m with (m + 0) by lia.
     rewrite lift_subst'. f_equal. lia.
 Qed.
-
-(* Lemma parred_diamond {u v w : term} (uv : u ⇒ v) (uw : u ⇒ w)
-: exists t, v ⇒ t /\ w ⇒ t.
-Proof.
-  revert w uw. induction uv; intros w uw; inversion uw; subst.
-  - exists ^n. eauto using parred.
-  -  exists *s. eauto using parred.
-  - destruct (IHuv1 _ H1) as [x [t'x t'0x]].
-    destruct (IHuv2 _ H3) as [y [u'y u'0y]].
-    exists (subst y 0 x).
-    split; apply subst_parred; assumption.
-  - inversion H1. subst.
-    + assert (fw : lift 1 0 f @ ^0 ⇒ lift 1 0 u'0 @ ^0).
-      { apply parred_app. apply lift_parred. assumption. apply parred_rel. }
-      destruct (IHuv1 _ fw) as [x [? ?]].
-      destruct (IHuv2 _ H3) as [y [? ?]].
-      exists (subst y 0 x). split.
-      * apply subst_parred; assumption.
-      * admit.
-        
-    + destruct (IHuv1 _ H0) as [x [? ?]].
-      destruct (IHuv2 _ H3) as [y [? ?]].
-      exists (subst y 0 x). split; [apply subst_parred|apply parred_beta_app]; assumption.
-  - destruct (IHuv1 _ H1) as [x [u'x wx]].
-    exists x. split; assumption.
-  - admit.
-  - destruct (IHuv2 _ H3) as [x [u'x wx]].
-    exists x. split; assumption.
-  - admit.
-  - assert (eq : f0 = f). { eapply lift_injective. eassumption. }
-    rewrite eq in *.
-    apply IHuv. assumption.
-  - admit.
-  - apply IHuv. assumption.
-  - admit.
-  - destruct (IHuv1 _ H1) as [x [A'x wx]].
-    destruct (IHuv2 _ H3) as [y [B'y wy]].
-    exists (∏x, y). split; apply parred_prod; assumption.
-  - admit.
-  - destruct (IHuv _ H0) as [x [t'x wx]].
-    exists (λ, x). split; apply parred_lambda; assumption.
-  - admit.
-  - destruct (IHuv1 _ H1) as [x [u'x wx]].
-    destruct (IHuv2 _ H3) as [y [v'y wy]].
-    exists (x @ y). split; apply parred_app; assumption.
-  - destruct (IHuv1 _ H1) as [x [A'x wx]].
-    destruct (IHuv2 _ H3) as [y [B'y wy]].
-    exists (∑x, y). split; apply parred_sum; assumption.
-  - admit.
-  - destruct (IHuv1 _ H1) as [x [u'x wx]].
-    destruct (IHuv2 _ H3) as [y [v'y wy]].
-    exists (⟨x, y⟩). split; apply parred_pair; assumption.
-  - admit.
-  - destruct (IHuv _ H0) as [x [p'x wx]].
-    exists (π₁ x). split; apply parred_pi1; assumption.
-  - admit.
-  - destruct (IHuv _ H0) as [x [p'x wx]].
-    exists (π₂ x). split; apply parred_pi2; assumption.
-Admitted. *)
     
 Lemma lift_red' {v w : term}  {n k : nat}
 : (lift n k v ▷ lift n k w) -> v ▷ w.
