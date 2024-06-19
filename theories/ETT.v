@@ -8,63 +8,63 @@ Open Scope t_scope.
 Section ETT.
 Declare Scope x_scope.
 
-Inductive typed: context -> term -> term -> Prop :=
-| tySort (Γ : context) (s : sort)
+Inductive xtyped: context -> term -> term -> Prop :=
+| xtySort (Γ : context) (s : sort)
 : Γ ⊢ₓ *s : *(sSucc s)
 
-| tyProd (Γ : context) (s1 s2 : sort) (A B : term)
+| xtyProd (Γ : context) (s1 s2 : sort) (A B : term)
 : Γ ⊢ₓ A : *s1 ->
   Γ ,, A ⊢ₓ B : *s2 ->
   Γ ⊢ₓ ∏A, B : *(sPi s1 s2)
 
-| tySum (Γ : context) (s1 s2 : sort) (A B : term)
+| xtySum (Γ : context) (s1 s2 : sort) (A B : term)
 : Γ ⊢ₓ A : *s1 ->
   Γ ,, A ⊢ₓ B : *s2 ->
   Γ ⊢ₓ ∑A, B : *(sSig s1 s2)
 
-| tyRel (Γ : context) (n : nat) (isdef : n < List.length Γ)
+| xtyRel (Γ : context) (n : nat) (isdef : n < List.length Γ)
 : Γ ⊢ₓ ^n : lift (S n) 0 (safe_nth n Γ isdef)
 
-| tyLam (Γ : context) (s1 s2 : sort) (A B t : term)
+| xtyLam (Γ : context) (s1 s2 : sort) (A B t : term)
 : Γ ⊢ₓ A : *s1 ->
   Γ ,, A ⊢ₓ B : *s2 ->
   Γ ,, A ⊢ₓ t : B ->
   Γ ⊢ₓ λ, t : ∏A, B
 
-| tyApp {Γ : context} {s1 s2 : sort} (A B t u : term)
+| xtyApp {Γ : context} {s1 s2 : sort} (A B t u : term)
 : Γ ⊢ₓ A : *s1 ->
   Γ ,, A ⊢ₓ B : *s2 ->
   Γ ⊢ₓ t : ∏A, B ->
   Γ ⊢ₓ u : A ->
   Γ ⊢ₓ t @ u : B[u]
 
-| tyPair (Γ : context) (s1 s2 : sort) (A B u v : term)
+| xtyPair (Γ : context) (s1 s2 : sort) (A B u v : term)
 : Γ ⊢ₓ u : A ->
   Γ ⊢ₓ A : *s1 ->
   Γ ,, A ⊢ₓ B : *s2 ->
   Γ ⊢ₓ v : B[u] ->
   Γ ⊢ₓ ⟨u, v⟩ : ∑A, B
 
-| tyPi1 (Γ : context) (A B p : term)
+| xtyPi1 (Γ : context) (A B p : term)
 : Γ ⊢ₓ p : ∑A, B ->
   Γ ⊢ₓ π₁ p : A
 
-| tyPi2 (Γ : context) (A B p : term)
+| xtyPi2 (Γ : context) (A B p : term)
 : Γ ⊢ₓ p : ∑A, B ->
   Γ ⊢ₓ π₂ p : B[π₁ p]
 
-| tyEq (Γ : context) (s : sort) (A u v : term)
+| xtyEq (Γ : context) (s : sort) (A u v : term)
 : Γ ⊢ₓ A : *s ->
   Γ ⊢ₓ u : A ->
   Γ ⊢ₓ v : A ->
   Γ ⊢ₓ u == v : *(sEq s)
 
-| tyRefl (Γ : context) (s : sort) (A u : term)
+| xtyRefl (Γ : context) (s : sort) (A u : term)
 : Γ ⊢ₓ u : A ->
   Γ ⊢ₓ A : *s ->
   Γ ⊢ₓ Refl(u) : u == u
 
-| tyJ (Γ : context) (s : sort) (A C t p x y : term)
+| xtyJ (Γ : context) (s : sort) (A C t p x y : term)
 : Γ ,, A ,, (lift 1 0 A) ,, (^1 == ^0) ⊢ₓ C : *s ->
   Γ ,, A ⊢ₓ t : C[^0, Refl(^1)] ->
   Γ ⊢ₓ x : A ->
@@ -72,13 +72,13 @@ Inductive typed: context -> term -> term -> Prop :=
   Γ ⊢ₓ p : x == y ->
   Γ ⊢ₓ J(t,p) : C[x, lift 1 0 y, lift 2 0 p]
 
-| tyConv (Γ : context) (s : sort) (A B u : term)
+| xtyConv (Γ : context) (s : sort) (A B u : term)
 : Γ ⊢ₓ u : A ->
   Γ ⊢ₓ A ≡ B : *s ->
   Γ ⊢ₓ u : B
-where "Γ '⊢ₓ' t : T" := (typed Γ t T) : x_scope
+where "Γ '⊢ₓ' t : T" := (xtyped Γ t T) : x_scope
 
-with eq_typed : context -> term -> term -> term -> Prop :=
+with eq_xtyped : context -> term -> term -> term -> Prop :=
 | eqRefl (Γ : context) (u A : term)
 : Γ ⊢ₓ u : A ->
   Γ ⊢ₓ u ≡ u : A
@@ -191,37 +191,35 @@ with eq_typed : context -> term -> term -> term -> Prop :=
   Γ ⊢ₓ p ≡ p' : x == y ->
   Γ ⊢ₓ J(t,p) ≡ J(t',p') : C[x, y, p]
 
-where " Γ '⊢ₓ' t ≡ u : T " := (eq_typed Γ t u T) : x_scope.
+where " Γ '⊢ₓ' t ≡ u : T " := (eq_xtyped Γ t u T) : x_scope.
 
 
 End ETT.
 
 Declare Scope x_scope.
 
-Notation "Γ ,, d" := (d :: Γ) : x_scope.
-Notation "Γ ;; Δ" := (Δ ++ Γ) : x_scope.
-Notation "Γ ⊢ₓ t : T" := (typed Γ t T) : x_scope.
-Notation "Γ ⊢ₓ t ≡ u : T" := (eq_typed Γ t u T) : x_scope.
+Notation "Γ ⊢ₓ t : T" := (xtyped Γ t T) : x_scope.
+Notation "Γ ⊢ₓ t ≡ u : T" := (eq_xtyped Γ t u T) : x_scope.
 
 Ltac getRel Γ n :=
   let isdef := fresh "isdef" in
-  assert (isdef : n < length Γ); [simpl; lia|apply (tyRel Γ n isdef)].
+  assert (isdef : n < length Γ); [simpl; lia|apply (xtyRel Γ n isdef)].
 
-Ltac typer :=
+Ltac xtyper :=
 repeat match goal with
 | |- _ => progress simpl
-| |- typed _ (tSort _) _ => eapply tySort
-| |- typed _ (tProd _ _) _ => eapply tyProd
-| |- typed _ (tSum _ _) _ => eapply tySum
-| |- typed _ (tLambda _) _ => eapply tyLam
-| |- typed _ (tPair _ _) _ => eapply tyPair
-| |- typed _ (tPi1 _) _ => eapply tyPi1
-| |- typed _ (tPi2 _) _ => eapply tyPi2
-| |- typed ?Γ (tRel ?n) _ => getRel Γ n
-| |- typed _ (tApp _ _) (tSort _) => eapply (tyApp _ (tSort _))
-| |- eq_typed _ ?x ?x _ => eapply (eqRefl _ x _)
-| |- eq_typed _ _ _ _ => progress apply eqProdCong
-| |- eq_typed _ _ _ _ => progress apply eqLamCong
-| |- eq_typed _ _ _ _ => progress apply eqSumCong
-| |- eq_typed _ _ _ _ => progress apply eqPairCong
+| |- xtyped _ (tSort _) _ => eapply xtySort
+| |- xtyped _ (tProd _ _) _ => eapply xtyProd
+| |- xtyped _ (tSum _ _) _ => eapply xtySum
+| |- xtyped _ (tLambda _) _ => eapply xtyLam
+| |- xtyped _ (tPair _ _) _ => eapply xtyPair
+| |- xtyped _ (tPi1 _) _ => eapply xtyPi1
+| |- xtyped _ (tPi2 _) _ => eapply xtyPi2
+| |- xtyped ?Γ (tRel ?n) _ => getRel Γ n
+| |- xtyped _ (tApp _ _) (tSort _) => eapply (xtyApp _ (tSort _))
+| |- eq_xtyped _ ?x ?x _ => eapply (eqRefl _ x _)
+| |- eq_xtyped _ _ _ _ => progress apply eqProdCong
+| |- eq_xtyped _ _ _ _ => progress apply eqLamCong
+| |- eq_xtyped _ _ _ _ => progress apply eqSumCong
+| |- eq_xtyped _ _ _ _ => progress apply eqPairCong
 end.

@@ -1,110 +1,108 @@
 From Coq Require Import List Lia.
 Require Import Ast Subst Conversion SafeNth.
 
-Reserved Notation "Γ ,, d" (at level 20, d at next level, left associativity, format "'[' Γ ',,' d ']'").
-Reserved Notation "Γ ;; Δ" (at level 20, Δ at next level, left associativity, format "'[' Γ ';;' Δ ']'").
 Reserved Notation "Γ ⊢ᵢ t : T" (at level 50, t, T at next level, format "'[' Γ '//' '⊢ᵢ'  t '//' ':'  T ']'").
 
 Open Scope t_scope.
 Section ITT.
 Declare Scope i_scope.
-Definition context := list term.
-Notation "Γ ,, d" := (d :: Γ) : i_scope.
-Notation "Γ ;; Δ" := (Δ ++ Γ) : i_scope.
 
-Inductive typed: context -> term -> term -> Prop :=
-| tySort (Γ : context) (s : sort)
+Inductive ityped: context -> term -> term -> Prop :=
+| itySort (Γ : context) (s : sort)
 : Γ ⊢ᵢ *s : *(sSucc s)
 
-| tyProd (Γ : context) (s1 s2 : sort) (A B : term)
+| ityProd (Γ : context) (s1 s2 : sort) (A B : term)
 : Γ ⊢ᵢ A : *s1 ->
   Γ ,, A ⊢ᵢ B : *s2 ->
   Γ ⊢ᵢ ∏A, B : *(sPi s1 s2)
 
-| tySum (Γ : context) (s1 s2 : sort) (A B : term)
+| itySum (Γ : context) (s1 s2 : sort) (A B : term)
 : Γ ⊢ᵢ A : *s1 ->
   Γ ,, A ⊢ᵢ B : *s2 ->
   Γ ⊢ᵢ ∑A, B : *(sSig s1 s2)
 
-| tyRel (Γ : context) (n : nat) (isdef : n < List.length Γ)
+| ityRel (Γ : context) (n : nat) (isdef : n < List.length Γ)
 : Γ ⊢ᵢ ^n : lift (S n) 0 (safe_nth n Γ isdef)
 
-| tyLam (Γ : context) (s1 s2 : sort) (A B t : term)
+| ityLam (Γ : context) (s1 s2 : sort) (A B t : term)
 : Γ ⊢ᵢ A : *s1 ->
   Γ ,, A ⊢ᵢ B : *s2 ->
   Γ ,, A ⊢ᵢ t : B ->
   Γ ⊢ᵢ λ, t : ∏A, B
 
-| tyApp {Γ : context} {s1 s2 : sort} (A B t u : term)
+| ityApp {Γ : context} {s1 s2 : sort} (A B t u : term)
 : Γ ⊢ᵢ A : *s1 ->
   Γ ,, A ⊢ᵢ B : *s2 ->
   Γ ⊢ᵢ t : ∏A, B ->
   Γ ⊢ᵢ u : A ->
   Γ ⊢ᵢ t @ u : (subst u 0 B)
 
-| tyPair (Γ : context) (s1 s2 : sort) (A B u v : term)
+| ityPair (Γ : context) (s1 s2 : sort) (A B u v : term)
 : Γ ⊢ᵢ u : A ->
   Γ ⊢ᵢ A : *s1 ->
   Γ ,, A ⊢ᵢ B : *s2 ->
   Γ ⊢ᵢ v : (subst u 0 B) ->
   Γ ⊢ᵢ ⟨u, v⟩ : ∑A, B
 
-| tyPi1 (Γ : context) (A B p : term)
+| ityPi1 (Γ : context) (A B p : term)
 : Γ ⊢ᵢ p : ∑A, B ->
   Γ ⊢ᵢ π₁ p : A
 
-| tyPi2 (Γ : context) (A B p : term)
+| ityPi2 (Γ : context) (A B p : term)
 : Γ ⊢ᵢ p : ∑A, B ->
   Γ ⊢ᵢ π₂ p : (subst (π₁ p) 0 B)
 
-| tyEq (Γ : context) (s : sort) (A u v : term)
+| ityEq (Γ : context) (s : sort) (A u v : term)
 : Γ ⊢ᵢ A : *s ->
   Γ ⊢ᵢ u : A ->
   Γ ⊢ᵢ v : A ->
   Γ ⊢ᵢ u == v : *(sEq s)
 
-| tyRefl (Γ : context) (s : sort) (A u : term)
+| ityRefl (Γ : context) (s : sort) (A u : term)
 : Γ ⊢ᵢ u : A ->
   Γ ⊢ᵢ A : *s ->
   Γ ⊢ᵢ Refl(u) : u == u
 
-| tyJ (Γ : context) (s : sort) (A C t p x y : term)
+| ityJ (Γ : context) (s : sort) (A C t p x y : term)
 : Γ ,, A ,, (lift 1 0 A) ,, (^1 == ^0) ⊢ᵢ C : *s ->
   Γ ,, A ⊢ᵢ t : C[^0, Refl(^1)] ->
   Γ ⊢ᵢ x : A ->
   Γ ⊢ᵢ y : A ->
   Γ ⊢ᵢ p : x == y ->
   Γ ⊢ᵢ J(t,p) : C[x, lift 1 0 y, lift 2 0 p]
+
+| ityTransport (Γ : context) (A B p t : term)
+: Γ ⊢ᵢ p : A == B ->
+  Γ ⊢ᵢ t : A ->
+  Γ ⊢ᵢ tTransport p t : B
   
-| tyConv (Γ : context) (A B t : term) (s : sort)
+| ityConv (Γ : context) (A B t : term) (s : sort)
 : Γ ⊢ᵢ t : A ->
   A ≡ B ->
   Γ ⊢ᵢ B : *s ->
   Γ ⊢ᵢ t : B
-where "Γ '⊢ᵢ' t : T" := (typed Γ t T) : i_scope.
+where "Γ '⊢ᵢ' t : T" := (ityped Γ t T) : i_scope.
 
 End ITT.
 
 Declare Scope i_scope.
 
-Notation "Γ ,, d" := (d :: Γ) : i_scope.
-Notation "Γ ;; Δ" := (Δ ++ Γ) : i_scope.
-Notation "Γ ⊢ᵢ t : T" := (typed Γ t T) : i_scope.
+Notation "Γ ⊢ᵢ t : T" := (ityped Γ t T) : i_scope.
 
 Ltac getRel Γ n :=
   let isdef := fresh "isdef" in
-  assert (isdef : n < length Γ); [simpl; lia|apply (tyRel Γ n isdef)].
+  assert (isdef : n < length Γ); [simpl; lia|apply (ityRel Γ n isdef)].
 
-Ltac typer :=
+Ltac ityper :=
 repeat match goal with
 | |- _ => progress simpl
-| |- typed _ (tSort _) _ => eapply tySort
-| |- typed _ (tProd _ _) _ => eapply tyProd
-| |- typed _ (tSum _ _) _ => eapply tySum
-| |- typed _ (tLambda _) _ => eapply tyLam
-| |- typed _ (tPair _ _) _ => eapply tyPair
-| |- typed _ (tPi1 _) _ => eapply tyPi1
-| |- typed _ (tPi2 _) _ => eapply tyPi2
-| |- typed ?Γ (tRel ?n) _ => getRel Γ n
-| |- typed _ (tApp _ _) (tSort _) => eapply (tyApp _ (tSort _))
+| |- ityped _ (tSort _) _ => eapply itySort
+| |- ityped _ (tProd _ _) _ => eapply ityProd
+| |- ityped _ (tSum _ _) _ => eapply itySum
+| |- ityped _ (tLambda _) _ => eapply ityLam
+| |- ityped _ (tPair _ _) _ => eapply ityPair
+| |- ityped _ (tPi1 _) _ => eapply ityPi1
+| |- ityped _ (tPi2 _) _ => eapply ityPi2
+| |- ityped ?Γ (tRel ?n) _ => getRel Γ n
+| |- ityped _ (tApp _ _) (tSort _) => eapply (ityApp _ (tSort _))
 end.
