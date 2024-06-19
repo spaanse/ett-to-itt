@@ -19,6 +19,7 @@ Inductive decorates : term -> term -> Prop :=
 | dec_J t1 t2 p1 p2              : t1 ⊏ t2 -> p1 ⊏ p2 -> J(t1,p1) ⊏ J(t2, p2)
 | dec_refl u1 u2                 : u1 ⊏ u2 -> Refl(u1) ⊏ Refl(u2)
 where "x ⊏ y" := (decorates x y).
+Notation "x ⊏ y" := (decorates x y).
 
 Inductive decsim : term -> term -> Prop :=
 | ds_transport_l p t1 t2        : t1 ≃ t2 -> (tTransport p t1) ≃ t2
@@ -36,6 +37,7 @@ Inductive decsim : term -> term -> Prop :=
 | ds_J t1 t2 p1 p2              : t1 ≃ t2 -> p1 ≃ p2 -> J(t1,p1) ≃ J(t2, p2)
 | ds_refl u1 u2                 : u1 ≃ u2 -> Refl(u1) ≃ Refl(u2)
 where "x ≃ y" := (decsim x y).
+Notation "x ≃ y" := (decsim x y).
 
 Fixpoint erase_transport t : term :=
 match t with
@@ -93,4 +95,11 @@ Proof.
     apply decsim_same_erase in bc.
     apply decsim_same_erase.
     congruence.
+Qed.
+
+Lemma decsim_dec a b
+: a ⊏ b -> a ≃ b.
+Proof.
+  intros ab.
+  induction ab; eauto using decsim.
 Qed.
