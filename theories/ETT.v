@@ -1,17 +1,12 @@
 From Coq Require Import List Lia.
 Require Import Ast Subst SafeNth.
 
-Reserved Notation "Γ ,, d" (at level 20, d at next level, left associativity, format "'[' Γ ',,' d ']'").
-Reserved Notation "Γ ;; Δ" (at level 20, Δ at next level, left associativity, format "'[' Γ ';;' Δ ']'").
 Reserved Notation "Γ ⊢ₓ t : T" (at level 50, t, T at next level, format "'[' Γ '//' '⊢ₓ'  t '//' ':'  T ']'").
 Reserved Notation "Γ ⊢ₓ t ≡ u : T" (at level 50, t, u, T at next level, format "'[' Γ '//' '⊢ₓ'  t  '≡'  u '//' ':'  T ']'").
 
 Open Scope t_scope.
 Section ETT.
 Declare Scope x_scope.
-Definition context := list term.
-Notation "Γ ,, d" := (d :: Γ) : x_scope.
-Notation "Γ ;; Δ" := (Δ ++ Γ) : x_scope.
 
 Inductive typed: context -> term -> term -> Prop :=
 | tySort (Γ : context) (s : sort)
